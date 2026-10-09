@@ -16,7 +16,6 @@ type Estadisticas_del_sectorController struct {
 	beego.Controller
 }
 
-
 // Post ...
 // @Title Create
 // @Description create Estadisticas_del_sector
