@@ -10,7 +10,7 @@ type CrearUsuarioRequest struct {
 	Activo               bool   `json:"Activo"`
 }
 
-// Lo que se envía al CRUD (el rel(fk) de Beego espera un objeto {"Id": n})
+
 type RolRef struct {
 	Id int `json:"Id"`
 }
@@ -25,7 +25,7 @@ type UsuarioCrudRequest struct {
 	Activo               bool   `json:"Activo"`
 }
 
-// Respuesta del CRUD al crear (solo necesito el Id)
+// Respuesta del CRUD al crear (solo necesita el Id)
 type UsuarioCrudResponse struct {
 	Id int `json:"Id"`
 }
