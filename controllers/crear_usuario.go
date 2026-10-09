@@ -11,7 +11,7 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 )
 
-// CrearUsuarioController operations for CrearUsuario
+// CrearUsuarioController operacion para CrearUsuario
 type CrearUsuarioController struct {
 	beego.Controller
 }
@@ -65,7 +65,6 @@ func (c *CrearUsuarioController) CrearUsuario() {
 		NombreCompleto:       solicitud.NombreCompleto,
 		Correo:               solicitud.Correo,
 		Telefono:             solicitud.Telefono,
-		IdRol:                strconv.Itoa(solicitud.IdRol),
 		VerificacionDosPasos: solicitud.VerificacionDosPasos,
 		Avatar:               solicitud.Avatar,
 		Activo:               solicitud.Activo,
