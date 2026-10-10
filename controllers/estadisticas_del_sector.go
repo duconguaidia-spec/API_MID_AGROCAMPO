@@ -1,11 +1,10 @@
 package controllers
 
 import (
-
+	"API_MID_AGROCAMPO/models"
 	"encoding/json"
 	"strconv"
-	
-	"agrocampo_crud_gestion/models"
+
 
 	"github.com/beego/beego/v2/client/orm"
 	beego "github.com/beego/beego/v2/server/web"
@@ -39,10 +38,10 @@ func (c *Estadisticas_del_sectorController)Post() {
 	o := orm.NewOrm()
 	_,err = o.Insert(&dato)
 	if err != nil{
-		responder(&c.Controller, 500, false, "No se puedo crear el registro" , err.Error())
+		responder(&c.Controller, 500, false, "No se puedo crear la estadistica" , err.Error())
 		return
 	}
-	responder(&c.Controller,201, true, "Registro creado", dato)
+	responder(&c.Controller,201, true, "Estadistica creada", dato)
 
 }
 
@@ -67,20 +66,20 @@ func (c *Estadisticas_del_sectorController) GetOne() {
 	dato := models.Estadisticas_del_sector{Id: id}
 	err = o.Read(&dato)
 	if err == orm.ErrNoRows {
-		responder(&c.Controller, 404, false, "No existe el registro", nil)
+		responder(&c.Controller, 404, false, "No existe la estadistica", nil)
 		return
 	}
 
 	if err != nil {
-		responder(&c.Controller, 404, false, "Error consultado en el registro",err.Error())
+		responder(&c.Controller, 500, false, "Error consultado en la estadistica",err.Error())
 		return
 	}
 	if !dato.Activo {
-		responder (&c.Controller,404, false, "No existe el registro", nil)
+		responder (&c.Controller,404, false, "No existe la estadistica", nil)
 		return
 	
 	}
-		responder(&c.Controller, 200, true,"Registro consultado", dato)
+		responder(&c.Controller, 200, true,"Estadistica consultada", dato)
 
 	}
 
@@ -103,21 +102,17 @@ func (c *Estadisticas_del_sectorController) GetAll() {
 
 	consulta := o.QueryTable(new(models.Estadistica_del_sector)).Filter("activo", true)
 
-	fecha := c.GetString("fecha")
-	if fecha != ""{
-		consulta =consulta.Filter("fecha", fecha)
-	}
-	categoria := c.GetString("categoria")
-	if categoria != ""{
-		consulta  = consulta.Filter("categoria", categoria)
-	}
-	_, err := consulta.OrderBy("-fecha", "categoria").All(&datos)
-	if err != nil{
-		responder(&c.Controller, 500, false, "Error consultando las registros", err.Error())
-		return
+	tipo := c.GetString("tipo")
+	if tipo != ""{
+		consulta = consulta.Filter("tipo", tipo)
 	}
 
-	responder(&c.Controller, 200, true, "Registros buscados",datos)
+	_, err := consulta.OrderBy("-tipo","id").All(&datos)
+	if err != nil{
+		responder(&c.Controller, 500, false, "Error consultando las estadisticas", err.Error())
+		return}
+
+	responder(&c.Controller, 200, true, "Estadisticas buscados",datos)
 	
 }
 
@@ -140,7 +135,7 @@ func (c *Estadisticas_del_sectorController) Put() {
 	dato := models.Estadisticas_del_sector{Id:id}
 	err = o.Read(&dato)
 	if err != nil {
-		responder(&c.Controller, 404, false, "No existe el registro",nil)
+		responder(&c.Controller, 404, false, "No existe la estadistica",nil)
 		return
 	}
 
@@ -154,10 +149,10 @@ func (c *Estadisticas_del_sectorController) Put() {
 
 	_, err= o.Update(&dato)
 	if err !=nil{
-		responder(&c.Controller, 500, false, "No se pudo modificar el registro",err.Error())
+		responder(&c.Controller, 500, false, "No se pudo modificar la estadistica",err.Error())
 		return
 	}
-	responder(&c.Controller,200, true, "Registro modificxdp", dato)
+	responder(&c.Controller,200, true, "Estadistica modificada", dato)
 }
 
 // Delete ...
@@ -165,7 +160,7 @@ func (c *Estadisticas_del_sectorController) Put() {
 // @Description delete the Estadisticas_del_sector
 // @Param	id		path 	string	true		"The id you want to delete"
 // @Success 200 {string} delete success!
-// @Failure 403 id is empty
+// @Failure 403 id is empty/************
 // @router /:id [delete]
 func (c *Estadisticas_del_sectorController) Delete() {
 	id, err := strconv.Atoi(c.Ctx.Input.Param(":id"))
@@ -178,16 +173,16 @@ func (c *Estadisticas_del_sectorController) Delete() {
 	dato := models.Estadisticas_del_sector{Id:id}
 	err = o.Read(&dato)
 	if err != nil {
-		responder(&c.Controller, 404, false, "No existe el registro",nil)
+		responder(&c.Controller, 404, false, "No existe la estadistica registro",nil)
 		return
 	}
 
 	dato.Activo = false
 	_, err= o.Update(&dato, "Activo")
 	if err !=nil{
-		responder(&c.Controller, 500, false, "No se pudo eliminar el registro",err.Error())
+		responder(&c.Controller, 500, false, "No se pudo eliminar la estadistica",err.Error())
 		return
 	}
-	responder(&c.Controller,200, true, "Registro eliminado ",nil)
+	responder(&c.Controller,200, true, "Estadistica eliminada ",nil)
 }
 

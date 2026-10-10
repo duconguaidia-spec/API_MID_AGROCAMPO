@@ -1,7 +1,15 @@
 package controllers
 
 import (
+	"encoding/json"
+	"strconv"
+
+	"agrocampo_crud_gestion/models"
+
+
+	"github.com/beego/beego/v2/client/orm"
 	beego "github.com/beego/beego/v2/server/web"
+
 )
 
 // Estadisticas_del_ganadoController operations for Estadisticas_del_ganado
@@ -9,14 +17,6 @@ type Estadisticas_del_ganadoController struct {
 	beego.Controller
 }
 
-// URLMapping ...
-func (c *Estadisticas_del_ganadoController) URLMapping() {
-	c.Mapping("Post", c.Post)
-	c.Mapping("GetOne", c.GetOne)
-	c.Mapping("GetAll", c.GetAll)
-	c.Mapping("Put", c.Put)
-	c.Mapping("Delete", c.Delete)
-}
 
 // Post ...
 // @Title Create
@@ -26,8 +26,27 @@ func (c *Estadisticas_del_ganadoController) URLMapping() {
 // @Failure 403 body is empty
 // @router / [post]
 func (c *Estadisticas_del_ganadoController) Post() {
+	var dato models.Estadisticadelganado
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &dato)
+	if err != nil {
+		responder(&c.Controller, 400, false, "El json enviado no es valido", err.Error())
+		return
+	}
+
+	dato.Id =0
+	dato.Activo = true
+
+	o := orm.NewOrm()
+	_,err = o.Insert(&dato)
+	if err != nil{
+		responder(&c.Controller, 500, false, "No se puedo crear el registro" , err.Error())
+		return
+	}
+	responder(&c.Controller,201, true, "Registro creado", dato)
 
 }
+
+
 
 // GetOne ...
 // @Title GetOne
