@@ -10,12 +10,12 @@ type CrearUsuarioRequest struct {
 	Activo               bool   `json:"Activo"`
 }
 
-
 type RolRef struct {
 	Id int `json:"Id"`
 }
 
 type UsuarioCrudRequest struct {
+	Id                   int    `json:"id,string"`
 	NombreCompleto       string `json:"NombreCompleto"`
 	Correo               string `json:"Correo"`
 	Telefono             string `json:"Telefono"`
