@@ -60,7 +60,7 @@ func (c *Estadisticas_del_ganadoController) GetOne() {
 	o := orm.NewOrm()
 	dato := models.Estadisticas_del_ganado{Id: id}
 	if err != nil {
-		responder(&c.Controller, 404, false, "No existe el registro", err.Error())
+		responder(&c.Controller, 404, false, "No exisrte el registro", err.Error())
 		return
 	}
 	if err != nil {
