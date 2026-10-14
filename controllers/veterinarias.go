@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"bytes"
 	"time"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -68,6 +69,207 @@ func (c *VeterinariaController) GetDetalleVeterinaria() {
 	}
 	c.ServeJSON()
 }
+// PostCrearVeterinaria crea la veterinaria y luego sus productos en las CRUD.
+func (c *VeterinariaController) PostCrearVeterinaria() {
+	var solicitud models.CrearVeterinariaRequest
+
+	// Lee el JSON enviado por el frontend.
+	if err := json.NewDecoder(c.Ctx.Request.Body).Decode(&solicitud); err != nil {
+		c.responderError(http.StatusBadRequest, "El JSON enviado no es válido")
+		return
+	}
+
+	// Valida los campos obligatorios de la veterinaria.
+	if strings.TrimSpace(solicitud.Nombre) == "" ||
+		strings.TrimSpace(solicitud.Direccion) == "" ||
+		strings.TrimSpace(solicitud.Ciudad) == "" ||
+		strings.TrimSpace(solicitud.Telefono) == "" {
+		c.responderError(
+			http.StatusBadRequest,
+			"Nombre, dirección, ciudad y teléfono son obligatorios",
+		)
+		return
+	}
+
+	// Valida los productos antes de empezar a guardar datos.
+	for i, producto := range solicitud.Productos {
+		if strings.TrimSpace(producto.Nombre) == "" {
+			c.responderError(
+				http.StatusBadRequest,
+				fmt.Sprintf("El producto en la posición %d debe tener nombre", i),
+			)
+			return
+		}
+		if producto.Precio < 0 {
+			c.responderError(
+				http.StatusBadRequest,
+				fmt.Sprintf("El precio del producto en la posición %d no puede ser negativo", i),
+			)
+			return
+		}
+	}
+
+	// Lee las direcciones de las CRUD desde conf/app.conf.
+	urlVeterinaria, err := beego.AppConfig.String("url_veterinaria")
+	if err != nil {
+		c.responderError(
+			http.StatusInternalServerError,
+			"Falta configurar url_veterinaria",
+		)
+		return
+	}
+
+	urlProductos, err := beego.AppConfig.String("url_productos_veterinaria")
+	if err != nil {
+		c.responderError(
+			http.StatusInternalServerError,
+			"Falta configurar url_productos_veterinaria",
+		)
+		return
+	}
+
+	// Prepara la veterinaria para enviarla a su CRUD.
+	veterinariaCRUD := models.CrearVeterinariaCRUD{
+		PropietarioID:   solicitud.PropietarioID,
+		Nombre:          solicitud.Nombre,
+		Descripcion:     solicitud.Descripcion,
+		Direccion:       solicitud.Direccion,
+		Ciudad:          solicitud.Ciudad,
+		Departamento:    solicitud.Departamento,
+		Telefono:        solicitud.Telefono,
+		CorreoPublico:   solicitud.CorreoPublico,
+		HorarioAtencion: solicitud.HorarioAtencion,
+		Latitud:         solicitud.Latitud,
+		Longitud:        solicitud.Longitud,
+		Aprobado:        false,
+		Activo:          true,
+	}
+
+	var respuestaVeterinaria models.RespuestaVeterinariaCRUD
+	_, err = enviarPOSTCRUD(
+		c.Ctx.Request.Context(),
+		urlVeterinaria,
+		veterinariaCRUD,
+		&respuestaVeterinaria,
+	)
+	if err != nil {
+		c.responderError(
+			http.StatusBadGateway,
+			"No fue posible crear la veterinaria en la CRUD",
+		)
+		return
+	}
+
+	if !respuestaVeterinaria.Success || respuestaVeterinaria.Data.ID <= 0 {
+		c.responderError(
+			http.StatusBadGateway,
+			"La CRUD no devolvió el ID de la veterinaria creada",
+		)
+		return
+	}
+
+	idVeterinaria := respuestaVeterinaria.Data.ID
+	productosCreados := make([]models.ProductoCRUD, 0, len(solicitud.Productos))
+
+	// Crea cada producto usando el ID que devolvió la CRUD de veterinarias.
+	for i, producto := range solicitud.Productos {
+		productoCRUD := models.CrearProductoVeterinariaCRUD{
+			Veterinaria: models.ReferenciaVeterinariaCRUD{
+				ID: idVeterinaria,
+			},
+			Nombre:      producto.Nombre,
+			Descripcion: producto.Descripcion,
+			ImagenURL:   producto.ImagenURL,
+			Precio:      producto.Precio,
+			Activo:      true,
+		}
+
+		var respuestaProducto models.RespuestaCrearProductoCRUD
+		_, err := enviarPOSTCRUD(
+			c.Ctx.Request.Context(),
+			urlProductos,
+			productoCRUD,
+			&respuestaProducto,
+		)
+		if err != nil || !respuestaProducto.Success {
+			// La veterinaria y los productos anteriores ya pueden haberse guardado.
+			c.Ctx.Output.SetStatus(http.StatusBadGateway)
+			c.Data["json"] = map[string]interface{}{
+				"success":          false,
+				"message":          "La veterinaria se creó, pero falló la creación de uno de sus productos",
+				"producto_fallido": i,
+				"data": map[string]interface{}{
+					"veterinaria": respuestaVeterinaria.Data,
+					"productos":   productosCreados,
+				},
+			}
+			c.ServeJSON()
+			return
+		}
+
+		productosCreados = append(productosCreados, respuestaProducto.Data)
+	}
+
+	// Devuelve al frontend todo lo que se creó.
+	c.Ctx.Output.SetStatus(http.StatusCreated)
+	c.Data["json"] = models.CrearVeterinariaResponse{
+	Success: true,
+	Message: "Veterinaria y productos creados correctamente",
+	Data: models.CrearVeterinariaDataResponse{
+		Veterinaria: respuestaVeterinaria.Data,
+		Productos:   productosCreados,
+	},
+
+	}
+	c.ServeJSON()
+}
+
+// enviarPOSTCRUD envía JSON a una CRUD y decodifica su respuesta.
+func enviarPOSTCRUD(
+	ctx context.Context,
+	endpoint string,
+	datos interface{},
+	destino interface{},
+) (int, error) {
+	cuerpoJSON, err := json.Marshal(datos)
+	if err != nil {
+		return 0, err
+	}
+
+	peticion, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		endpoint,
+		bytes.NewReader(cuerpoJSON),
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	peticion.Header.Set("Content-Type", "application/json")
+
+	cliente := &http.Client{Timeout: 10 * time.Second}
+	respuesta, err := cliente.Do(peticion)
+	if err != nil {
+		return 0, err
+	}
+	defer respuesta.Body.Close()
+
+	if respuesta.StatusCode < http.StatusOK ||
+		respuesta.StatusCode >= http.StatusMultipleChoices {
+		return respuesta.StatusCode, fmt.Errorf(
+			"la CRUD respondió con HTTP %d",
+			respuesta.StatusCode,
+		)
+	}
+
+	if err := json.NewDecoder(respuesta.Body).Decode(destino); err != nil {
+		return respuesta.StatusCode, err
+	}
+
+	return respuesta.StatusCode, nil
+}
+
 
 func (c *VeterinariaController) idVeterinaria() (int, bool) {
 	id, err := strconv.Atoi(c.Ctx.Input.Param(":id"))

@@ -98,3 +98,75 @@ type DetalleVeterinaria struct {
 	Servicios   []ServicioVeterinaria `json:"servicios"`
 	Productos   []ProductoVeterinaria `json:"productos"`
 }
+// Datos que recibe el MID desde el frontend.
+type CrearVeterinariaRequest struct {
+	PropietarioID   *int                           `json:"propietario_id,omitempty"`
+	Nombre          string                         `json:"nombre"`
+	Descripcion     string                         `json:"descripcion,omitempty"`
+	Direccion       string                         `json:"direccion"`
+	Ciudad          string                         `json:"ciudad"`
+	Departamento    string                         `json:"departamento,omitempty"`
+	Telefono        string                         `json:"telefono"`
+	CorreoPublico   string                         `json:"correo_publico,omitempty"`
+	HorarioAtencion string                         `json:"horario_atencion,omitempty"`
+	Latitud         *float64                       `json:"latitud,omitempty"`
+	Longitud        *float64                       `json:"longitud,omitempty"`
+	Productos       []CrearProductoRequest         `json:"productos"`
+}
+
+// Datos de cada producto que recibe el MID.
+type CrearProductoRequest struct {
+	Nombre      string  `json:"nombre"`
+	Descripcion string  `json:"descripcion,omitempty"`
+	ImagenURL   string  `json:"imagen_url,omitempty"`
+	Precio      float64 `json:"precio"`
+}
+
+// Formato que el MID envía a la CRUD de veterinarias.
+type CrearVeterinariaCRUD struct {
+	PropietarioID   *int     `json:"propietario_id,omitempty"`
+	Nombre          string   `json:"nombre"`
+	Descripcion     string   `json:"descripcion,omitempty"`
+	Direccion       string   `json:"direccion"`
+	Ciudad          string   `json:"ciudad"`
+	Departamento    string   `json:"departamento,omitempty"`
+	Telefono        string   `json:"telefono"`
+	CorreoPublico   string   `json:"correo_publico,omitempty"`
+	HorarioAtencion string   `json:"horario_atencion,omitempty"`
+	Latitud         *float64 `json:"latitud,omitempty"`
+	Longitud        *float64 `json:"longitud,omitempty"`
+	Aprobado        bool     `json:"aprobado"`
+	Activo          bool     `json:"activo"`
+}
+
+// Referencia a la veterinaria que se anida en el JSON de la CRUD de productos.
+type ReferenciaVeterinariaCRUD struct {
+	ID int `json:"id"`
+}
+
+// Formato que el MID envía a la CRUD de productos.
+type CrearProductoVeterinariaCRUD struct {
+	Veterinaria ReferenciaVeterinariaCRUD `json:"veterinaria"`
+	Nombre      string                    `json:"nombre"`
+	Descripcion string                    `json:"descripcion,omitempty"`
+	ImagenURL   string                    `json:"imagen_url,omitempty"`
+	Precio      float64                   `json:"precio"`
+	Activo      bool                      `json:"activo"`
+}
+
+// Respuesta de la CRUD al crear un solo producto.
+type RespuestaCrearProductoCRUD struct {
+	Success bool         `json:"success"`
+	Data    ProductoCRUD `json:"data"`
+}
+
+type CrearVeterinariaDataResponse struct {
+	Veterinaria VeterinariaCRUD       `json:"veterinaria"`
+	Productos   []ProductoCRUD        `json:"productos"`
+}
+
+type CrearVeterinariaResponse struct {
+	Success bool                          `json:"success"`
+	Message string                        `json:"message"`
+	Data    CrearVeterinariaDataResponse `json:"data"`
+}
