@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/beego/beego/v2/client/orm"
-)
+) 
 
 type Estadisticas_del_sector struct {
 	Id        int     `orm:"column(id); pk;auto" json:"id"`
