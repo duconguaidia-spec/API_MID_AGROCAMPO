@@ -3,7 +3,7 @@ package models
 import (
 	"github.com/beego/beego/v2/client/orm"
 
-	
+
 )
 
 type Estadisticas_del_sector struct {
@@ -16,7 +16,7 @@ type Estadisticas_del_sector struct {
 	Activo   bool    `orm:"column(activo)"json:"activo"`
 }
 
-func (t *Estadisticas_del_sector) TableName() string {
+func (t *Estadisticas_del_sector ) TableName() string {
 	return "estadisticas_del_sector"
 }
 
