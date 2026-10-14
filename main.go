@@ -14,11 +14,7 @@ func main() {
 package main
 
 import (
-	"fmt"
-
-	_ "api_mid_AgroCampo/routers"
-
-	"github.com/beego/beego/v2/client/orm"
+	_ "API_MID_AGROCAMPO/routers"
 	beego "github.com/beego/beego/v2/server/web"
 	_ "github.com/lib/pq"
 )

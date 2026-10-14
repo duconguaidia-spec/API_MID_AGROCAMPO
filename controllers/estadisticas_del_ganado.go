@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"strconv"
 
-
 	"github.com/beego/beego/v2/client/orm"
 	beego "github.com/beego/beego/v2/server/web"
 )
@@ -58,6 +57,7 @@ func (c *Estadisticas_del_ganadoController) GetOne() {
 	}
 
 	o := orm.NewOrm()
+	_ =o
 	dato := models.Estadisticas_del_ganado{Id: id}
 	if err != nil {
 		responder(&c.Controller, 404, false, "No exisrte el registro", err.Error())
@@ -175,7 +175,7 @@ func (c *Estadisticas_del_ganadoController) Delete() {
 		return
 	}
 
-	dato.Id = false
+	dato.Activo = false
 	_, err = o.Update(&dato, "Activo")
 	if err != nil {
 		responder(&c.Controller, 500, false, "No se pudo modificar el registro", err.Error())
