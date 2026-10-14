@@ -1,7 +1,7 @@
-package controllers
+package controllers_InicioSesion
 
 import (
-	"API_MID_AGROCAMPO/models"
+	"API_MID_AGROCAMPO/models_InicioSesion"
 	"bytes"
 	"encoding/json"
 	"io"
@@ -25,13 +25,13 @@ func (c *CrearUsuarioController) responderError(status int, mensaje string) {
 // CrearUsuario ...
 // @Title Crear usuario
 // @Description Recibe el json del usuario y lo crea en el CRUD de usuarios
-// @Param body body models.CrearUsuarioRequest true "Informacion del usuario"
-// @Success 201 {object} models.CrearUsuarioResponse
+// @Param body body models_InicioSesion.CrearUsuarioRequest true "Informacion del usuario"
+// @Success 201 {object} models_InicioSesion.CrearUsuarioResponse
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @router /crear [post]
 func (c *CrearUsuarioController) CrearUsuario() {
-	var solicitud models.CrearUsuarioRequest
+	var solicitud models_InicioSesion.CrearUsuarioRequest
 
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &solicitud)
 	if err != nil {
@@ -60,7 +60,7 @@ func (c *CrearUsuarioController) CrearUsuario() {
 		return
 	}
 
-	usuarioCrud := models.UsuarioCrudRequest{
+	usuarioCrud := models_InicioSesion.UsuarioCrudRequest{
 		NombreCompleto:       solicitud.NombreCompleto,
 		Correo:               solicitud.Correo,
 		Telefono:             solicitud.Telefono,
@@ -93,14 +93,14 @@ func (c *CrearUsuarioController) CrearUsuario() {
 		return
 	}
 
-	var usuarioCreado models.UsuarioCrudResponse
+	var usuarioCreado models_InicioSesion.UsuarioCrudResponse
 	err = json.Unmarshal(cuerpoUsuarioCreado, &usuarioCreado)
 	if err != nil {
 		c.responderError(http.StatusInternalServerError, "No fue posible procesar la respuesta del api usuarios")
 		return
 	}
 
-	resultado := models.CrearUsuarioResponse{
+	resultado := models_InicioSesion.CrearUsuarioResponse{
 		Mensaje:   "Usuario creado correctamente",
 		IDUsuario: usuarioCreado.Id,
 	}

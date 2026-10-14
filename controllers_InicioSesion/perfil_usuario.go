@@ -1,7 +1,7 @@
-package controllers
+package controllers_InicioSesion
 
 import (
-	"API_MID_AGROCAMPO/models"
+	"API_MID_AGROCAMPO/models_InicioSesion"
 	"encoding/json"
 	"errors"
 	"io"
@@ -50,7 +50,7 @@ func (c *Perfil_usuarioController) obtener(url string, destino interface{}) (int
 // @Title GetOne
 // @Description get Perfil_usuario by id
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object} models.Perfil_usuario
+// @Success 200 {object} models_InicioSesion.Perfil_usuario
 // @Failure 403 :id is empty
 // @router /:id [get]
 func (c *Perfil_usuarioController) GetOne() {
@@ -72,7 +72,7 @@ func (c *Perfil_usuarioController) GetOne() {
 		return
 	}
 
-	var usuario models.UsuarioPerfilCrud
+	var usuario models_InicioSesion.UsuarioPerfilCrud
 	status, err := c.obtener(urlUsuarios+"/"+strconv.Itoa(id), &usuario)
 	if err != nil {
 		c.responderError(status, "No fue posible consultar el usuario")
@@ -84,7 +84,7 @@ func (c *Perfil_usuarioController) GetOne() {
 		return
 	}
 
-	var perfil models.PerfilCrud
+	var perfil models_InicioSesion.PerfilCrud
 	status, err = c.obtener(urlPerfiles+"/"+strconv.Itoa(id), &perfil)
 	if err != nil {
 		c.responderError(status, "No fue posible consultar el perfil del usuario")
@@ -92,7 +92,7 @@ func (c *Perfil_usuarioController) GetOne() {
 	}
 
 	c.Ctx.Output.SetStatus(http.StatusOK)
-	c.Data["json"] = models.PerfilUsuarioResponse{
+	c.Data["json"] = models_InicioSesion.PerfilUsuarioResponse{
 		IDUsuario:            usuario.Id,
 		NombreCompleto:       usuario.NombreCompleto,
 		Correo:               usuario.Correo,
