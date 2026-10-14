@@ -1,4 +1,4 @@
-package models
+package models_InicioSesion
 
 // Lo que envía el cliente al MID
 type RecuperarContrasenaRequest struct {
