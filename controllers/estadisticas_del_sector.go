@@ -100,7 +100,7 @@ func (c *Estadisticas_del_sectorController) GetAll() {
 	o := orm.NewOrm()
 	datos :=[]models.Estadisticas_del_sector{}
 
-	consulta := o.QueryTable(new(models.Estadistica_del_sector)).Filter("activo", true)
+	consulta := o.QueryTable(new(models.Estadisticas_del_sector)).Filter("activo", true)
 
 	tipo := c.GetString("tipo")
 	if tipo != ""{
