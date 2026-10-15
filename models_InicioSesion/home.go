@@ -1,11 +1,5 @@
 package models_InicioSesion
 
-// Claims del token del login (supuesto: JWT HS256)
-type TokenClaims struct {
-	Id  int   `json:"id"`
-	Exp int64 `json:"exp"`
-}
-
 // Lo que se lee del CRUD de solicitudes (solo lo necesario)
 type SolicitudCrud struct {
 	Id     int    `json:"Id"`

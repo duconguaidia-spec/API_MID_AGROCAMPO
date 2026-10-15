@@ -2,21 +2,16 @@ package controllers_InicioSesion
 
 import (
 	"API_MID_AGROCAMPO/models_InicioSesion"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
-	"time"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
 
-// HomeController operations for Home
+// HomeController operacion para el Home
 type HomeController struct {
 	beego.Controller
 }
@@ -83,46 +78,11 @@ func (c *HomeController) calcularEficiencia(url string) *int {
 	return &eficiencia
 }
 
-func validarToken(token string, secreto string) (int, error) {
-	partes := strings.Split(token, ".")
-	if len(partes) != 3 {
-		return 0, errors.New("formato de token invalido")
-	}
-
-	mac := hmac.New(sha256.New, []byte(secreto))
-	mac.Write([]byte(partes[0] + "." + partes[1]))
-
-	firma, err := base64.RawURLEncoding.DecodeString(partes[2])
-	if err != nil || !hmac.Equal(firma, mac.Sum(nil)) {
-		return 0, errors.New("firma invalida")
-	}
-
-	cuerpo, err := base64.RawURLEncoding.DecodeString(partes[1])
-	if err != nil {
-		return 0, errors.New("payload invalido")
-	}
-
-	var claims models_InicioSesion.TokenClaims
-	err = json.Unmarshal(cuerpo, &claims)
-	if err != nil {
-		return 0, errors.New("payload invalido")
-	}
-
-	if claims.Exp != 0 && time.Now().Unix() > claims.Exp {
-		return 0, errors.New("token expirado")
-	}
-
-	if claims.Id <= 0 {
-		return 0, errors.New("token sin id de usuario")
-	}
-
-	return claims.Id, nil
-}
 
 // GetAll ...
 // @Title GetAll
 // @Description get Home
-// @Param	Authorization	header	string	true	"Bearer token del login"
+// @Param	Authorization	header	string	true	
 // @Success 200 {object} models_InicioSesion.HomeResponse
 // @Failure 401 {object} map[string]string
 // @Failure 403 {object} map[string]string
@@ -131,13 +91,6 @@ func (c *HomeController) GetAll() {
 	secreto, _ := beego.AppConfig.String("jwt_secret")
 	if secreto == "" {
 		c.responderError(http.StatusInternalServerError, "La variable jwt_secret no esta configurada en el app.conf")
-		return
-	}
-
-	token := strings.TrimPrefix(c.Ctx.Input.Header("Authorization"), "Bearer ")
-	idUsuario, err := validarToken(token, secreto)
-	if err != nil {
-		c.responderError(http.StatusUnauthorized, "Token invalido o expirado")
 		return
 	}
 
@@ -152,10 +105,8 @@ func (c *HomeController) GetAll() {
 		urls[nombre] = valor
 	}
 
-	id := strconv.Itoa(idUsuario)
-
 	var usuario models_InicioSesion.UsuarioPerfilCrud
-	status, err := c.obtener(urls["url_usuarios"]+"/"+id, &usuario)
+	status, err := c.obtener(urls["url_usuarios"]+"/", &usuario)
 	if err != nil {
 		c.responderError(status, "No fue posible consultar el usuario")
 		return
@@ -167,7 +118,7 @@ func (c *HomeController) GetAll() {
 	}
 
 	var perfil models_InicioSesion.PerfilCrud
-	_, _ = c.obtener(urls["url_perfiles"]+"/"+id, &perfil)
+	_, _ = c.obtener(urls["url_perfiles"]+"/", &perfil)
 
 	noticias := []models_InicioSesion.NoticiaCrud{}
 	_, err = c.obtener(urls["url_noticias"]+"?sortby=Fecha&order=desc&limit=5", &noticias)
