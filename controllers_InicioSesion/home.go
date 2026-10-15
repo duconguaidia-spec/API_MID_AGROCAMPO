@@ -11,7 +11,7 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 )
 
-// HomeController operations for Home
+// HomeController operacion para el Home
 type HomeController struct {
 	beego.Controller
 }
@@ -82,7 +82,7 @@ func (c *HomeController) calcularEficiencia(url string) *int {
 // GetAll ...
 // @Title GetAll
 // @Description get Home
-// @Param	Authorization	header	string	true	"Bearer token del login"
+// @Param	Authorization	header	string	true	
 // @Success 200 {object} models_InicioSesion.HomeResponse
 // @Failure 401 {object} map[string]string
 // @Failure 403 {object} map[string]string
