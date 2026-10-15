@@ -2,16 +2,11 @@ package controllers_InicioSesion
 
 import (
 	"API_MID_AGROCAMPO/models_InicioSesion"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
-	"time"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
@@ -83,41 +78,6 @@ func (c *HomeController) calcularEficiencia(url string) *int {
 	return &eficiencia
 }
 
-func validarToken(token string, secreto string) (int, error) {
-	partes := strings.Split(token, ".")
-	if len(partes) != 3 {
-		return 0, errors.New("formato de token invalido")
-	}
-
-	mac := hmac.New(sha256.New, []byte(secreto))
-	mac.Write([]byte(partes[0] + "." + partes[1]))
-
-	firma, err := base64.RawURLEncoding.DecodeString(partes[2])
-	if err != nil || !hmac.Equal(firma, mac.Sum(nil)) {
-		return 0, errors.New("firma invalida")
-	}
-
-	cuerpo, err := base64.RawURLEncoding.DecodeString(partes[1])
-	if err != nil {
-		return 0, errors.New("payload invalido")
-	}
-
-	var claims models_InicioSesion.TokenClaims
-	err = json.Unmarshal(cuerpo, &claims)
-	if err != nil {
-		return 0, errors.New("payload invalido")
-	}
-
-	if claims.Exp != 0 && time.Now().Unix() > claims.Exp {
-		return 0, errors.New("token expirado")
-	}
-
-	if claims.Id <= 0 {
-		return 0, errors.New("token sin id de usuario")
-	}
-
-	return claims.Id, nil
-}
 
 // GetAll ...
 // @Title GetAll
@@ -134,13 +94,6 @@ func (c *HomeController) GetAll() {
 		return
 	}
 
-	token := strings.TrimPrefix(c.Ctx.Input.Header("Authorization"), "Bearer ")
-	idUsuario, err := validarToken(token, secreto)
-	if err != nil {
-		c.responderError(http.StatusUnauthorized, "Token invalido o expirado")
-		return
-	}
-
 	urls := map[string]string{}
 	nombres := []string{"url_usuarios", "url_perfiles", "url_foros", "url_productores", "url_veterinarias", "url_solicitudes", "url_noticias"}
 	for _, nombre := range nombres {
@@ -152,10 +105,8 @@ func (c *HomeController) GetAll() {
 		urls[nombre] = valor
 	}
 
-	id := strconv.Itoa(idUsuario)
-
 	var usuario models_InicioSesion.UsuarioPerfilCrud
-	status, err := c.obtener(urls["url_usuarios"]+"/"+id, &usuario)
+	status, err := c.obtener(urls["url_usuarios"]+"/", &usuario)
 	if err != nil {
 		c.responderError(status, "No fue posible consultar el usuario")
 		return
@@ -167,7 +118,7 @@ func (c *HomeController) GetAll() {
 	}
 
 	var perfil models_InicioSesion.PerfilCrud
-	_, _ = c.obtener(urls["url_perfiles"]+"/"+id, &perfil)
+	_, _ = c.obtener(urls["url_perfiles"]+"/", &perfil)
 
 	noticias := []models_InicioSesion.NoticiaCrud{}
 	_, err = c.obtener(urls["url_noticias"]+"?sortby=Fecha&order=desc&limit=5", &noticias)
