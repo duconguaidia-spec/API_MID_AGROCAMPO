@@ -1,17 +1,17 @@
-package controllers_InicioSesion
+package controllers
 
 import (
-	"API_MID_AGROCAMPO/models_InicioSesion"
+	"api_mid/models"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
-	"strings"
+	"strconv"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
 
-// HomeController operacion para el Home
+// HomeController operations for Home
 type HomeController struct {
 	beego.Controller
 }
@@ -46,67 +46,35 @@ func (c *HomeController) obtener(url string, destino interface{}) (int, error) {
 	return http.StatusOK, nil
 }
 
-func (c *HomeController) contar(url string) *int {
-	var lista []json.RawMessage
-	_, err := c.obtener(url+"?limit=-1", &lista)
-	if err != nil {
-		return nil
-	}
-
-	total := len(lista)
-	return &total
-}
-
-func (c *HomeController) calcularEficiencia(url string) *int {
-	var solicitudes []models_InicioSesion.SolicitudCrud
-	_, err := c.obtener(url+"?limit=-1", &solicitudes)
-	if err != nil {
-		return nil
-	}
-
-	eficiencia := 0
-	if len(solicitudes) > 0 {
-		resueltas := 0
-		for _, solicitud := range solicitudes {
-			if strings.EqualFold(solicitud.Estado, "Resuelta") {
-				resueltas++
-			}
-		}
-		eficiencia = resueltas * 100 / len(solicitudes)
-	}
-
-	return &eficiencia
-}
-
-
 // GetAll ...
 // @Title GetAll
 // @Description get Home
-// @Param	Authorization	header	string	true	
-// @Success 200 {object} models_InicioSesion.HomeResponse
-// @Failure 401 {object} map[string]string
+// @Param	id	query	string	true	"Id del usuario (temporal, luego sale del token)"
+// @Success 200 {object} models.HomeResponse
+// @Failure 400 {object} map[string]string
 // @Failure 403 {object} map[string]string
 // @router / [get]
 func (c *HomeController) GetAll() {
-	secreto, _ := beego.AppConfig.String("jwt_secret")
-	if secreto == "" {
-		c.responderError(http.StatusInternalServerError, "La variable jwt_secret no esta configurada en el app.conf")
+	id, err := strconv.Atoi(c.GetString("id"))
+	if err != nil || id <= 0 {
+		c.responderError(http.StatusBadRequest, "El id del usuario no es valido")
 		return
 	}
 
-	urls := map[string]string{}
-	nombres := []string{"url_usuarios", "url_perfiles", "url_foros", "url_productores", "url_veterinarias", "url_solicitudes", "url_noticias"}
-	for _, nombre := range nombres {
-		valor, _ := beego.AppConfig.String(nombre)
-		if valor == "" {
-			c.responderError(http.StatusInternalServerError, "La variable "+nombre+" no esta configurada en el app.conf")
-			return
-		}
-		urls[nombre] = valor
+	urlUsuarios, _ := beego.AppConfig.String("url_usuarios")
+	if urlUsuarios == "" {
+		c.responderError(http.StatusInternalServerError, "La variable url_usuarios no esta configurada en el app.conf")
+		return
 	}
 
-	var usuario models_InicioSesion.UsuarioPerfilCrud
-	status, err := c.obtener(urls["url_usuarios"]+"/", &usuario)
+	urlPerfiles, _ := beego.AppConfig.String("url_perfiles")
+	if urlPerfiles == "" {
+		c.responderError(http.StatusInternalServerError, "La variable url_perfiles no esta configurada en el app.conf")
+		return
+	}
+
+	var usuario models.UsuarioPerfilCrud
+	status, err := c.obtener(urlUsuarios+"/"+strconv.Itoa(id), &usuario)
 	if err != nil {
 		c.responderError(status, "No fue posible consultar el usuario")
 		return
@@ -117,18 +85,12 @@ func (c *HomeController) GetAll() {
 		return
 	}
 
-	var perfil models_InicioSesion.PerfilCrud
-	_, _ = c.obtener(urls["url_perfiles"]+"/", &perfil)
-
-	noticias := []models_InicioSesion.NoticiaCrud{}
-	_, err = c.obtener(urls["url_noticias"]+"?sortby=Fecha&order=desc&limit=5", &noticias)
-	if err != nil || noticias == nil {
-		noticias = []models_InicioSesion.NoticiaCrud{}
-	}
+	var perfil models.PerfilCrud
+	_, _ = c.obtener(urlPerfiles+"/"+strconv.Itoa(id), &perfil)
 
 	c.Ctx.Output.SetStatus(http.StatusOK)
-	c.Data["json"] = models_InicioSesion.HomeResponse{
-		Perfil: models_InicioSesion.PerfilHome{
+	c.Data["json"] = models.HomeResponse{
+		Perfil: models.PerfilHome{
 			IDUsuario:      usuario.Id,
 			NombreCompleto: usuario.NombreCompleto,
 			Correo:         usuario.Correo,
@@ -137,13 +99,6 @@ func (c *HomeController) GetAll() {
 			Avatar:         usuario.Avatar,
 			Ubicacion:      perfil.Ubicacion,
 		},
-		Contadores: models_InicioSesion.ContadoresHome{
-			Foros:        c.contar(urls["url_foros"]),
-			Productores:  c.contar(urls["url_productores"]),
-			Veterinarias: c.contar(urls["url_veterinarias"]),
-			Eficiencia:   c.calcularEficiencia(urls["url_solicitudes"]),
-		},
-		Noticias: noticias,
 	}
 	c.ServeJSON()
 }
