@@ -21,4 +21,15 @@ func init() {
 	beego.Router("/v1/estadisticas_del_ganado", &controllers.Estadisticas_del_ganadoController{}, "get:GetAll;post:Post")
 	beego.Router("/v1/estadisticas_del_ganado/:id([0-9]+", &controllers.Estadisticas_del_ganadoController{},"get:GetOne;put:Put;delete:Delete")
 
+	// Esta ruta reúne la información que necesita la página de detalle.
+	beego.Router(
+		"/api/v1/veterinarias/:id",
+		&controllers.VeterinariaController{},
+		"get:GetDetalleVeterinaria",
+	)
+	beego.Router(
+	"/api/v1/veterinarias",
+	&controllers.VeterinariaController{},
+	"post:PostCrearVeterinaria",
+)
 }
