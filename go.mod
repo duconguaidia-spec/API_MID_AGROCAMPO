@@ -1,6 +1,6 @@
 module API_MID_AGROCAMPO
 
-go 1.26.2
+go 1.24.2
 
 require (
 	github.com/beego/beego/v2 v2.3.10
