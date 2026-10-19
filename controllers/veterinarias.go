@@ -1,7 +1,8 @@
 package controllers
 
 import (
-	"api_mid_AgroCampo/models"
+	"API_MID_AGROCAMPO/models"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,7 +10,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"bytes"
 	"time"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -18,6 +18,46 @@ import (
 // VeterinariaController prepara los datos que necesita la página de detalle.
 type VeterinariaController struct {
 	beego.Controller
+}
+
+// GetAllVeterinarias lista las clínicas activas registradas en la CRUD.
+func (c *VeterinariaController) GetAllVeterinarias() {
+	urlVeterinaria, err := beego.AppConfig.String("url_veterinaria")
+	if err != nil {
+		c.responderError(http.StatusInternalServerError, "Falta configurar la URL de la CRUD de veterinarias")
+		return
+	}
+
+	parametros := url.Values{}
+	parametros.Set("limit", "100")
+	var respuesta models.RespuestaVeterinariasCRUD
+	if err := consultarCRUD(c.Ctx.Request.Context(), urlVeterinaria, parametros, &respuesta); err != nil {
+		c.responderError(http.StatusBadGateway, "No fue posible consultar las veterinarias en la CRUD")
+		return
+	}
+	if !respuesta.Success {
+		c.responderError(http.StatusBadGateway, "La CRUD no pudo consultar las veterinarias")
+		return
+	}
+
+	veterinarias := make([]models.VeterinariaCRUD, 0, len(respuesta.Data))
+	for _, veterinaria := range respuesta.Data {
+		if veterinaria.Activo {
+			servicios, err := c.consultarServicios(veterinaria.ID)
+			if err != nil {
+				c.responderError(http.StatusBadGateway, "No fue posible consultar los servicios de las veterinarias")
+				return
+			}
+			veterinaria.Servicios = servicios
+			veterinarias = append(veterinarias, veterinaria)
+		}
+	}
+
+	c.Data["json"] = map[string]interface{}{
+		"success": true,
+		"data":    veterinarias,
+	}
+	c.ServeJSON()
 }
 
 // GetDetalleVeterinaria reúne la clínica, sus servicios y sus productos.
@@ -69,6 +109,7 @@ func (c *VeterinariaController) GetDetalleVeterinaria() {
 	}
 	c.ServeJSON()
 }
+
 // PostCrearVeterinaria crea la veterinaria y luego sus productos en las CRUD.
 func (c *VeterinariaController) PostCrearVeterinaria() {
 	var solicitud models.CrearVeterinariaRequest
@@ -213,13 +254,12 @@ func (c *VeterinariaController) PostCrearVeterinaria() {
 	// Devuelve al frontend todo lo que se creó.
 	c.Ctx.Output.SetStatus(http.StatusCreated)
 	c.Data["json"] = models.CrearVeterinariaResponse{
-	Success: true,
-	Message: "Veterinaria y productos creados correctamente",
-	Data: models.CrearVeterinariaDataResponse{
-		Veterinaria: respuestaVeterinaria.Data,
-		Productos:   productosCreados,
-	},
-
+		Success: true,
+		Message: "Veterinaria y productos creados correctamente",
+		Data: models.CrearVeterinariaDataResponse{
+			Veterinaria: respuestaVeterinaria.Data,
+			Productos:   productosCreados,
+		},
 	}
 	c.ServeJSON()
 }
@@ -269,7 +309,6 @@ func enviarPOSTCRUD(
 
 	return respuesta.StatusCode, nil
 }
-
 
 func (c *VeterinariaController) idVeterinaria() (int, bool) {
 	id, err := strconv.Atoi(c.Ctx.Input.Param(":id"))

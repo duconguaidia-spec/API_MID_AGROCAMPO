@@ -16,10 +16,9 @@ func init() {
 	beego.Router("/v1/estadisticas_del_sector", &controllers.Estadisticas_del_sectorController{}, "get:GetAll;post:Post")
 	beego.Router("/v1/estadistica_del_sector/:id([0-9]+)", &controllers.Estadisticas_del_sectorController{}, "get:GetOne;put:Put;delete:Delete")
 
-
 	//Estadisticas_del_ganado(precio de la subasta)
 	beego.Router("/v1/estadisticas_del_ganado", &controllers.Estadisticas_del_ganadoController{}, "get:GetAll;post:Post")
-	beego.Router("/v1/estadisticas_del_ganado/:id([0-9]+", &controllers.Estadisticas_del_ganadoController{},"get:GetOne;put:Put;delete:Delete")
+	beego.Router("/v1/estadisticas_del_ganado/:id([0-9]+", &controllers.Estadisticas_del_ganadoController{}, "get:GetOne;put:Put;delete:Delete")
 
 	// Esta ruta reúne la información que necesita la página de detalle.
 	beego.Router(
@@ -28,8 +27,8 @@ func init() {
 		"get:GetDetalleVeterinaria",
 	)
 	beego.Router(
-	"/api/v1/veterinarias",
-	&controllers.VeterinariaController{},
-	"post:PostCrearVeterinaria",
-)
+		"/api/v1/veterinarias",
+		&controllers.VeterinariaController{},
+		"get:GetAllVeterinarias;post:PostCrearVeterinaria",
+	)
 }
