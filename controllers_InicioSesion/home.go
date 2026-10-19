@@ -1,12 +1,11 @@
-package controllers
+package controllers_InicioSesion
 
 import (
-	"api_mid/models"
+	"API_MID_AGROCAMPO/models_InicioSesion"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
-	"strconv"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
@@ -46,59 +45,149 @@ func (c *HomeController) obtener(url string, destino interface{}) (int, error) {
 	return http.StatusOK, nil
 }
 
+func (c *HomeController) contarForosNoticias(urlForos string, urlNoticias string) *int {
+	var foros []models_InicioSesion.TemaForoCrud
+	_, err := c.obtener(urlForos+"?limit=-1", &foros)
+	if err != nil {
+		return nil
+	}
+
+	var noticias []models_InicioSesion.NoticiaCrud
+	_, err = c.obtener(urlNoticias+"?limit=-1", &noticias)
+	if err != nil {
+		return nil
+	}
+
+	total := 0
+	for _, foro := range foros {
+		if foro.Activo {
+			total++
+		}
+	}
+	for _, noticia := range noticias {
+		if noticia.PublicadaEn != nil {
+			total++
+		}
+	}
+
+	return &total
+}
+
+func (c *HomeController) contarVeterinarias(urlVeterinarias string) *int {
+	var veterinarias []models_InicioSesion.VeterinariaCrud
+	_, err := c.obtener(urlVeterinarias+"?limit=-1", &veterinarias)
+	if err != nil {
+		return nil
+	}
+
+	total := 0
+	for _, veterinaria := range veterinarias {
+		if veterinaria.Activo && veterinaria.Aprobado {
+			total++
+		}
+	}
+
+	return &total
+}
+
+func (c *HomeController) calcularEficiencia(urlSolicitudes string) *int {
+	var solicitudes []models_InicioSesion.SolicitudCrud
+	_, err := c.obtener(urlSolicitudes+"?limit=-1", &solicitudes)
+	if err != nil {
+		return nil
+	}
+
+	total := 0
+	resueltas := 0
+	for _, solicitud := range solicitudes {
+		if !solicitud.Activo {
+			continue
+		}
+
+		total++
+		if solicitud.CompletadoEn != nil && solicitud.Error == "" {
+			resueltas++
+		}
+	}
+
+	eficiencia := 0
+	if total > 0 {
+		eficiencia = resueltas * 100 / total
+	}
+
+	return &eficiencia
+}
+
+func (c *HomeController) ultimasNoticias(urlNoticias string) []models_InicioSesion.NoticiaHome {
+	ultimas := []models_InicioSesion.NoticiaHome{}
+
+	var noticias []models_InicioSesion.NoticiaCrud
+	_, err := c.obtener(urlNoticias+"?sortby=FechaNoticia&order=desc&limit=-1", &noticias)
+	if err != nil {
+		return ultimas
+	}
+
+	for _, noticia := range noticias {
+		if noticia.PublicadaEn == nil {
+			continue
+		}
+
+		ultimas = append(ultimas, models_InicioSesion.NoticiaHome{
+			Id:      noticia.Id,
+			Titulo:  noticia.Titulo,
+			Resumen: noticia.Resumen,
+			Fuente:  noticia.Fuente,
+			Imagen:  noticia.Imagen,
+			Fecha:   *noticia.PublicadaEn,
+		})
+
+		if len(ultimas) == 5 {
+			break
+		}
+	}
+
+	return ultimas
+}
+
 // GetAll ...
 // @Title GetAll
 // @Description get Home
-// @Param	id	query	string	true	"Id del usuario (temporal, luego sale del token)"
-// @Success 200 {object} models.HomeResponse
-// @Failure 400 {object} map[string]string
-// @Failure 403 {object} map[string]string
+// @Success 200 {object} models_InicioSesion.HomeResponse
+// @Failure 500 {object} map[string]string
 // @router / [get]
 func (c *HomeController) GetAll() {
-	id, err := strconv.Atoi(c.GetString("id"))
-	if err != nil || id <= 0 {
-		c.responderError(http.StatusBadRequest, "El id del usuario no es valido")
+	urlForos, _ := beego.AppConfig.String("url_foros")
+	if urlForos == "" {
+		c.responderError(http.StatusInternalServerError, "La variable url_foros no esta configurada en el app.conf")
 		return
 	}
 
-	urlUsuarios, _ := beego.AppConfig.String("url_usuarios")
-	if urlUsuarios == "" {
-		c.responderError(http.StatusInternalServerError, "La variable url_usuarios no esta configurada en el app.conf")
+	urlNoticias, _ := beego.AppConfig.String("url_noticias")
+	if urlNoticias == "" {
+		c.responderError(http.StatusInternalServerError, "La variable url_noticias no esta configurada en el app.conf")
 		return
 	}
 
-	urlPerfiles, _ := beego.AppConfig.String("url_perfiles")
-	if urlPerfiles == "" {
-		c.responderError(http.StatusInternalServerError, "La variable url_perfiles no esta configurada en el app.conf")
+	urlVeterinarias, _ := beego.AppConfig.String("url_veterinarias")
+	if urlVeterinarias == "" {
+		c.responderError(http.StatusInternalServerError, "La variable url_veterinarias no esta configurada en el app.conf")
 		return
 	}
 
-	var usuario models.UsuarioPerfilCrud
-	status, err := c.obtener(urlUsuarios+"/"+strconv.Itoa(id), &usuario)
-	if err != nil {
-		c.responderError(status, "No fue posible consultar el usuario")
+	urlSolicitudes, _ := beego.AppConfig.String("url_solicitudes")
+	if urlSolicitudes == "" {
+		c.responderError(http.StatusInternalServerError, "La variable url_solicitudes no esta configurada en el app.conf")
 		return
 	}
-
-	if !usuario.Activo {
-		c.responderError(http.StatusForbidden, "El usuario se encuentra inactivo")
-		return
-	}
-
-	var perfil models.PerfilCrud
-	_, _ = c.obtener(urlPerfiles+"/"+strconv.Itoa(id), &perfil)
 
 	c.Ctx.Output.SetStatus(http.StatusOK)
-	c.Data["json"] = models.HomeResponse{
-		Perfil: models.PerfilHome{
-			IDUsuario:      usuario.Id,
-			NombreCompleto: usuario.NombreCompleto,
-			Correo:         usuario.Correo,
-			Telefono:       usuario.Telefono,
-			IdRol:          usuario.IdRol,
-			Avatar:         usuario.Avatar,
-			Ubicacion:      perfil.Ubicacion,
+	c.Data["json"] = models_InicioSesion.HomeResponse{
+		Contadores: models_InicioSesion.ContadoresHome{
+			ForosNoticias: c.contarForosNoticias(urlForos, urlNoticias),
+			Veterinarias:  c.contarVeterinarias(urlVeterinarias),
+			Eficiencia:    c.calcularEficiencia(urlSolicitudes),
 		},
+		Noticias: c.ultimasNoticias(urlNoticias),
 	}
 	c.ServeJSON()
 }
