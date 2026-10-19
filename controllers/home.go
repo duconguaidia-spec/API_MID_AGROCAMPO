@@ -1,7 +1,7 @@
-package controllers_InicioSesion
+package controllers
 
 import (
-	"API_MID_AGROCAMPO/models_InicioSesion"
+	"API_MID_AGROCAMPO/models"
 	"encoding/json"
 	"errors"
 	"io"
@@ -46,13 +46,13 @@ func (c *HomeController) obtener(url string, destino interface{}) (int, error) {
 }
 
 func (c *HomeController) contarForosNoticias(urlForos string, urlNoticias string) *int {
-	var foros []models_InicioSesion.TemaForoCrud
+	var foros []models.TemaForoCrud
 	_, err := c.obtener(urlForos+"?limit=-1", &foros)
 	if err != nil {
 		return nil
 	}
 
-	var noticias []models_InicioSesion.NoticiaCrud
+	var noticias []models.NoticiaCrud
 	_, err = c.obtener(urlNoticias+"?limit=-1", &noticias)
 	if err != nil {
 		return nil
@@ -74,7 +74,7 @@ func (c *HomeController) contarForosNoticias(urlForos string, urlNoticias string
 }
 
 func (c *HomeController) contarVeterinarias(urlVeterinarias string) *int {
-	var veterinarias []models_InicioSesion.VeterinariaCrud
+	var veterinarias []models.VeterinariaCrud
 	_, err := c.obtener(urlVeterinarias+"?limit=-1", &veterinarias)
 	if err != nil {
 		return nil
@@ -91,7 +91,7 @@ func (c *HomeController) contarVeterinarias(urlVeterinarias string) *int {
 }
 
 func (c *HomeController) calcularEficiencia(urlSolicitudes string) *int {
-	var solicitudes []models_InicioSesion.SolicitudCrud
+	var solicitudes []models.SolicitudCrud
 	_, err := c.obtener(urlSolicitudes+"?limit=-1", &solicitudes)
 	if err != nil {
 		return nil
@@ -118,10 +118,10 @@ func (c *HomeController) calcularEficiencia(urlSolicitudes string) *int {
 	return &eficiencia
 }
 
-func (c *HomeController) ultimasNoticias(urlNoticias string) []models_InicioSesion.NoticiaHome {
-	ultimas := []models_InicioSesion.NoticiaHome{}
+func (c *HomeController) ultimasNoticias(urlNoticias string) []models.NoticiaHome {
+	ultimas := []models.NoticiaHome{}
 
-	var noticias []models_InicioSesion.NoticiaCrud
+	var noticias []models.NoticiaCrud
 	_, err := c.obtener(urlNoticias+"?sortby=FechaNoticia&order=desc&limit=-1", &noticias)
 	if err != nil {
 		return ultimas
@@ -132,7 +132,7 @@ func (c *HomeController) ultimasNoticias(urlNoticias string) []models_InicioSesi
 			continue
 		}
 
-		ultimas = append(ultimas, models_InicioSesion.NoticiaHome{
+		ultimas = append(ultimas, models.NoticiaHome{
 			Id:      noticia.Id,
 			Titulo:  noticia.Titulo,
 			Resumen: noticia.Resumen,
@@ -152,7 +152,7 @@ func (c *HomeController) ultimasNoticias(urlNoticias string) []models_InicioSesi
 // GetAll ...
 // @Title GetAll
 // @Description get Home
-// @Success 200 {object} models_InicioSesion.HomeResponse
+// @Success 200 {object} models.HomeResponse
 // @Failure 500 {object} map[string]string
 // @router / [get]
 func (c *HomeController) GetAll() {
@@ -181,8 +181,8 @@ func (c *HomeController) GetAll() {
 	}
 
 	c.Ctx.Output.SetStatus(http.StatusOK)
-	c.Data["json"] = models_InicioSesion.HomeResponse{
-		Contadores: models_InicioSesion.ContadoresHome{
+	c.Data["json"] = models.HomeResponse{
+		Contadores: models.ContadoresHome{
 			ForosNoticias: c.contarForosNoticias(urlForos, urlNoticias),
 			Veterinarias:  c.contarVeterinarias(urlVeterinarias),
 			Eficiencia:    c.calcularEficiencia(urlSolicitudes),
