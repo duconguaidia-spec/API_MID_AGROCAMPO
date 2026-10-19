@@ -2,7 +2,6 @@ package routers
 
 import (
 	"API_MID_AGROCAMPO/controllers"
-	"API_MID_AGROCAMPO/controllers_InicioSesion"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
@@ -12,12 +11,12 @@ func init() {
 	//Inicio Sesion
 	beego.Router(
 		"/api/creacion/usuario", 
-		&controllers_InicioSesion.CrearUsuarioController{}, 
+		&controllers.CrearUsuarioController{}, 
 		"post:CrearUsuario",
 	)
 	beego.Router(
 		"/api/recuperar_contrasena", 
-		&controllers_InicioSesion.Recuperar_contrasenaController{}, 
+		&controllers.Recuperar_contrasenaController{}, 
 		"post:Post",
 	)
 	//Estadisticas_del_sector
