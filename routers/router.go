@@ -54,4 +54,22 @@ func init() {
 		&controllers.VeterinariaController{},
 		"post:PostCrearVeterinaria",
 	)
+
+	beego.Router(
+		"/v1/indicador_sector",
+		 &controllers.IndicadorSectorController{}, 
+		 "get:GetAll;post:Post")
+	beego.Router(
+		"/v1/indicador_sector/:id([0-9]+)", 
+		&controllers.IndicadorSectorController{},
+		 "get:GetOne;put:Put;delete:Delete")
+
+	beego.Router(
+		"/v1/medicion_sector",
+		 &controllers.MedicionSectorController{},
+		  "get:GetAll;post:Post")
+	beego.Router(
+		"/v1/medicion_sector/:id([0-9]+)",
+		 &controllers.MedicionSectorController{}, 
+		 "get:GetOne;put:Put;delete:Delete")
 }
