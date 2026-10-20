@@ -55,21 +55,15 @@ func init() {
 		"post:PostCrearVeterinaria",
 	)
 
-	beego.Router(
-		"/v1/indicador_sector",
-		 &controllers.IndicadorSectorController{}, 
-		 "get:GetAll;post:Post")
-	beego.Router(
-		"/v1/indicador_sector/:id([0-9]+)", 
-		&controllers.IndicadorSectorController{},
-		 "get:GetOne;put:Put;delete:Delete")
+	beego.Router("/v1/subasta", &controllers.SubastasController{}, "get:GetAll;post:Post")
+beego.Router("/v1/subasta/:id([0-9]+)", &controllers.SubastasController{}, "get:GetOne;put:Put;delete:Delete")
 
-	beego.Router(
-		"/v1/medicion_sector",
-		 &controllers.MedicionSectorController{},
-		  "get:GetAll;post:Post")
-	beego.Router(
-		"/v1/medicion_sector/:id([0-9]+)",
-		 &controllers.MedicionSectorController{}, 
-		 "get:GetOne;put:Put;delete:Delete")
+beego.Router("/v1/precio_subasta", &controllers.PreciosSubastaController{}, "get:GetAll;post:Post")
+beego.Router("/v1/precio_subasta/:id([0-9]+)", &controllers.PreciosSubastaController{}, "get:GetOne;put:Put;delete:Delete")
+
+beego.Router("/v1/indicador_sector", &controllers.IndicadoresSectorController{}, "get:GetAll;post:Post")
+beego.Router("/v1/indicador_sector/:id([0-9]+)", &controllers.IndicadoresSectorController{}, "get:GetOne;put:Put;delete:Delete")
+
+beego.Router("/v1/medicion_sector", &controllers.MedicionesSectorController{}, "get:GetAll;post:Post")
+beego.Router("/v1/medicion_sector/:id([0-9]+)", &controllers.MedicionesSectorController{}, "get:GetOne;put:Put;delete:Delete")
 }

@@ -2,131 +2,153 @@ package controllers
 
 import (
 	"API_MID_AGROCAMPO/models"
+	"API_MID_AGROCAMPO/services"
 	"encoding/json"
 	"strconv"
+	"strings"
 
-	"github.com/beego/beego/v2/client/orm"
 	beego "github.com/beego/beego/v2/server/web"
 )
 
-// MedicionSectorController operations for MedicionSector
-type MedicionSectorController struct {
+// MedicionesSectorController operations for MedicionSector
+type MedicionesSectorController struct {
 	beego.Controller
 }
 
-// Post ...
-// @Title Post
-// @Description crear la medicion
-// @router / [post]
-func (c *MedicionSectorController) Post() {
-	var dato models.MedicionSector
-	err := json.Unmarshal(c.Ctx.Input.RequestBody, &dato)
-	if err != nil {
-		responder(&c.Controller, 400, false, "El json enviado no es valido", err.Error())
-		return
+// validarMedicion revisa los datos antes de mandarlos al CRUD
+func validarMedicion(m models.MedicionSector, esNueva bool) string {
+	if esNueva && m.IndicadorId <= 0 {
+		return "Falta indicador_id"
 	}
-
-	_, err = models.AddMedicionSector(&dato)
-	if err != nil {
-		responder(&c.Controller, 400, false, "No se pudo crear la medicion", err.Error())
-		return
+	if esNueva && strings.TrimSpace(m.Fecha) == "" {
+		return "Falta la fecha de la medicion"
 	}
-	responder(&c.Controller, 201, true, "Medicion creada", dato)
+	if len(m.Region) > 120 {
+		return "La region no puede tener mas de 120 letras"
+	}
+	return ""
 }
 
-// GetOne ...
-// @Title GetOne
-// @Description consultar la medicion por id
-// @router /:id [get]
-func (c *MedicionSectorController) GetOne() {
-	id, err := strconv.Atoi(c.Ctx.Input.Param(":id"))
+// GetAll trae las mediciones del CRUD
+// para ver las de un indicador: ?query=indicador_id:1&sortby=fecha&order=desc
+func (c *MedicionesSectorController) GetAll() {
+	respuesta, err := services.Pedir("GET", "/medicion_sector"+parametrosUrl(&c.Controller), nil)
 	if err != nil {
-		responder(&c.Controller, 400, false, "El id no es valido", nil)
+		fallaCrud(&c.Controller, err)
+		return
+	}
+	if !respuesta.Success {
+		devolverRespuestaCrud(&c.Controller, respuesta)
 		return
 	}
 
-	dato, err := models.GetMedicionSectorById(id)
-	if err != nil {
-		responder(&c.Controller, 404, false, "No existe la medicion", err.Error())
-		return
+	mediciones := []models.MedicionSector{}
+	json.Unmarshal(respuesta.Data, &mediciones)
+	for i := range mediciones {
+		mediciones[i].Fecha = fechaDeCrud(mediciones[i].Fecha)
 	}
-	responder(&c.Controller, 200, true, "Medicion consultada", dato)
+	responder(&c.Controller, 200, true, "Mediciones consultadas", mediciones)
 }
 
-// GetAll ...
-// @Title GetAll
-// @Description consultar las mediciones
-// @router / [get]
-func (c *MedicionSectorController) GetAll() {
-	query, fields, sortby, order, offset, limit, err := leerParametrosLista(&c.Controller)
+// GetOne trae una medicion por id
+func (c *MedicionesSectorController) GetOne() {
+	id := c.Ctx.Input.Param(":id")
+
+	respuesta, err := services.Pedir("GET", "/medicion_sector/"+id, nil)
 	if err != nil {
-		responder(&c.Controller, 400, false, "Los parametros de la consulta no son validos", err.Error())
+		fallaCrud(&c.Controller, err)
+		return
+	}
+	if !respuesta.Success {
+		devolverRespuestaCrud(&c.Controller, respuesta)
 		return
 	}
 
-	lista, err := models.GetAllMedicionSector(query, fields, sortby, order, offset, limit)
-	if err != nil {
-		responder(&c.Controller, 400, false, "Error consultando las mediciones", err.Error())
-		return
-	}
-
-	// si no hay registros se devuelve una lista vacia, no un error
-	if lista == nil {
-		lista = []interface{}{}
-	}
-	responder(&c.Controller, 200, true, "Mediciones consultadas", lista)
+	medicion := models.MedicionSector{}
+	json.Unmarshal(respuesta.Data, &medicion)
+	medicion.Fecha = fechaDeCrud(medicion.Fecha)
+	responder(&c.Controller, 200, true, "Medicion consultada", medicion)
 }
 
-// Put ...
-// @Title Put
-// @Description modificar la medicion
-// @router /:id [put]
-func (c *MedicionSectorController) Put() {
-	id, err := strconv.Atoi(c.Ctx.Input.Param(":id"))
+// Post valida y crea una medicion
+func (c *MedicionesSectorController) Post() {
+	var medicion models.MedicionSector
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &medicion)
 	if err != nil {
-		responder(&c.Controller, 400, false, "El id no es valido", nil)
+		responder(&c.Controller, 400, false, "El JSON enviado no es valido", err.Error())
 		return
 	}
 
-	dato := models.MedicionSector{}
-	err = json.Unmarshal(c.Ctx.Input.RequestBody, &dato)
-	if err != nil {
-		responder(&c.Controller, 400, false, "El json enviado no es valido", err.Error())
+	mensaje := validarMedicion(medicion, true)
+	if mensaje != "" {
+		responder(&c.Controller, 400, false, mensaje, nil)
 		return
 	}
-	dato.Id = id
 
-	err = models.UpdateMedicionSectorById(&dato)
-	if err == orm.ErrNoRows {
-		responder(&c.Controller, 404, false, "No existe la medicion", nil)
-		return
-	}
+	// el CRUD necesita la fecha con hora, el cliente la manda solo como AAAA-MM-DD
+	medicion.Fecha, err = fechaParaCrud(medicion.Fecha)
 	if err != nil {
-		responder(&c.Controller, 400, false, "No se pudo modificar la medicion", err.Error())
+		responder(&c.Controller, 400, false, err.Error(), nil)
 		return
 	}
-	responder(&c.Controller, 200, true, "Medicion modificada", dato)
+
+	respuesta, err := services.Pedir("POST", "/medicion_sector", medicion)
+	if err != nil {
+		fallaCrud(&c.Controller, err)
+		return
+	}
+	if !respuesta.Success {
+		devolverRespuestaCrud(&c.Controller, respuesta)
+		return
+	}
+
+	creada := models.MedicionSector{}
+	json.Unmarshal(respuesta.Data, &creada)
+	creada.Fecha = fechaDeCrud(creada.Fecha)
+	responder(&c.Controller, 201, true, "Medicion creada", creada)
 }
 
-// Delete ...
-// @Title Delete
-// @Description eliminar la medicion (solo lo desactiva)
-// @router /:id [delete]
-func (c *MedicionSectorController) Delete() {
-	id, err := strconv.Atoi(c.Ctx.Input.Param(":id"))
+// Put valida y modifica la medicion (solo cambia el valor y la fuente)
+func (c *MedicionesSectorController) Put() {
+	id := c.Ctx.Input.Param(":id")
+
+	var medicion models.MedicionSector
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &medicion)
 	if err != nil {
-		responder(&c.Controller, 400, false, "El id no es valido", nil)
+		responder(&c.Controller, 400, false, "El JSON enviado no es valido", err.Error())
 		return
 	}
 
-	err = models.DeleteMedicionSector(id)
-	if err == orm.ErrNoRows {
-		responder(&c.Controller, 404, false, "No existe la medicion", nil)
-		return
-	}
+	numero, _ := strconv.Atoi(id)
+	medicion.Id = numero
+
+	// la fecha no se puede cambiar, asi que no se manda
+	medicion.Fecha = ""
+
+	respuesta, err := services.Pedir("PUT", "/medicion_sector/"+id, medicion)
 	if err != nil {
-		responder(&c.Controller, 400, false, "No se pudo eliminar la medicion", err.Error())
+		fallaCrud(&c.Controller, err)
 		return
 	}
-	responder(&c.Controller, 200, true, "Medicion eliminada", nil)
+	if !respuesta.Success {
+		devolverRespuestaCrud(&c.Controller, respuesta)
+		return
+	}
+
+	modificada := models.MedicionSector{}
+	json.Unmarshal(respuesta.Data, &modificada)
+	modificada.Fecha = fechaDeCrud(modificada.Fecha)
+	responder(&c.Controller, 200, true, "Medicion modificada", modificada)
+}
+
+// Delete elimina una medicion (el CRUD solo la desactiva)
+func (c *MedicionesSectorController) Delete() {
+	id := c.Ctx.Input.Param(":id")
+
+	respuesta, err := services.Pedir("DELETE", "/medicion_sector/"+id, nil)
+	if err != nil {
+		fallaCrud(&c.Controller, err)
+		return
+	}
+	devolverRespuestaCrud(&c.Controller, respuesta)
 }
