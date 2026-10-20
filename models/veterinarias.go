@@ -2,25 +2,32 @@ package models
 
 // VeterinariaCRUD representa los campos que devuelve la CRUD para una clínica.
 type VeterinariaCRUD struct {
-	ID              int      `json:"id"`
-	Nombre          string   `json:"nombre"`
-	Descripcion     string   `json:"descripcion"`
-	Direccion       string   `json:"direccion"`
-	Ciudad          string   `json:"ciudad"`
-	Departamento    string   `json:"departamento"`
-	Telefono        string   `json:"telefono"`
-	CorreoPublico   string   `json:"correo_publico"`
-	HorarioAtencion string   `json:"horario_atencion"`
-	Latitud         *float64 `json:"latitud"`
-	Longitud        *float64 `json:"longitud"`
-	Aprobado        bool     `json:"aprobado"`
-	Activo          bool     `json:"activo"`
+	ID              int                   `json:"id"`
+	Nombre          string                `json:"nombre"`
+	Descripcion     string                `json:"descripcion"`
+	Direccion       string                `json:"direccion"`
+	Ciudad          string                `json:"ciudad"`
+	Departamento    string                `json:"departamento"`
+	Telefono        string                `json:"telefono"`
+	CorreoPublico   string                `json:"correo_publico"`
+	HorarioAtencion string                `json:"horario_atencion"`
+	Latitud         *float64              `json:"latitud"`
+	Longitud        *float64              `json:"longitud"`
+	Aprobado        bool                  `json:"aprobado"`
+	Activo          bool                  `json:"activo"`
+	Servicios       []ServicioVeterinaria `json:"servicios,omitempty"`
 }
 
 // RespuestaVeterinariaCRUD es el sobre JSON que entrega la CRUD al consultar una clínica.
 type RespuestaVeterinariaCRUD struct {
 	Success bool            `json:"success"`
 	Data    VeterinariaCRUD `json:"data"`
+}
+
+// RespuestaVeterinariasCRUD es el sobre JSON que entrega la CRUD al listar clínicas.
+type RespuestaVeterinariasCRUD struct {
+	Success bool              `json:"success"`
+	Data    []VeterinariaCRUD `json:"data"`
 }
 
 // VeterinariaServicioCRUD representa un servicio del catálogo asociado a la clínica.
@@ -98,20 +105,21 @@ type DetalleVeterinaria struct {
 	Servicios   []ServicioVeterinaria `json:"servicios"`
 	Productos   []ProductoVeterinaria `json:"productos"`
 }
+
 // Datos que recibe el MID desde el frontend.
 type CrearVeterinariaRequest struct {
-	PropietarioID   *int                           `json:"propietario_id,omitempty"`
-	Nombre          string                         `json:"nombre"`
-	Descripcion     string                         `json:"descripcion,omitempty"`
-	Direccion       string                         `json:"direccion"`
-	Ciudad          string                         `json:"ciudad"`
-	Departamento    string                         `json:"departamento,omitempty"`
-	Telefono        string                         `json:"telefono"`
-	CorreoPublico   string                         `json:"correo_publico,omitempty"`
-	HorarioAtencion string                         `json:"horario_atencion,omitempty"`
-	Latitud         *float64                       `json:"latitud,omitempty"`
-	Longitud        *float64                       `json:"longitud,omitempty"`
-	Productos       []CrearProductoRequest         `json:"productos"`
+	PropietarioID   *int                   `json:"propietario_id,omitempty"`
+	Nombre          string                 `json:"nombre"`
+	Descripcion     string                 `json:"descripcion,omitempty"`
+	Direccion       string                 `json:"direccion"`
+	Ciudad          string                 `json:"ciudad"`
+	Departamento    string                 `json:"departamento,omitempty"`
+	Telefono        string                 `json:"telefono"`
+	CorreoPublico   string                 `json:"correo_publico,omitempty"`
+	HorarioAtencion string                 `json:"horario_atencion,omitempty"`
+	Latitud         *float64               `json:"latitud,omitempty"`
+	Longitud        *float64               `json:"longitud,omitempty"`
+	Productos       []CrearProductoRequest `json:"productos"`
 }
 
 // Datos de cada producto que recibe el MID.
@@ -161,12 +169,12 @@ type RespuestaCrearProductoCRUD struct {
 }
 
 type CrearVeterinariaDataResponse struct {
-	Veterinaria VeterinariaCRUD       `json:"veterinaria"`
-	Productos   []ProductoCRUD        `json:"productos"`
+	Veterinaria VeterinariaCRUD `json:"veterinaria"`
+	Productos   []ProductoCRUD  `json:"productos"`
 }
 
 type CrearVeterinariaResponse struct {
-	Success bool                          `json:"success"`
-	Message string                        `json:"message"`
+	Success bool                         `json:"success"`
+	Message string                       `json:"message"`
 	Data    CrearVeterinariaDataResponse `json:"data"`
 }

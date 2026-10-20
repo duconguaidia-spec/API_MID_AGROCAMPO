@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"API_MID_AGROCAMPO/models"
-
 	"bytes"
 	"context"
 	"encoding/json"
@@ -19,6 +18,46 @@ import (
 // VeterinariaController prepara los datos que necesita la página de detalle.
 type VeterinariaController struct {
 	beego.Controller
+}
+
+// GetAllVeterinarias lista las clínicas activas registradas en la CRUD.
+func (c *VeterinariaController) GetAllVeterinarias() {
+	urlVeterinaria, err := beego.AppConfig.String("url_veterinaria")
+	if err != nil {
+		c.responderError(http.StatusInternalServerError, "Falta configurar la URL de la CRUD de veterinarias")
+		return
+	}
+
+	parametros := url.Values{}
+	parametros.Set("limit", "100")
+	var respuesta models.RespuestaVeterinariasCRUD
+	if err := consultarCRUD(c.Ctx.Request.Context(), urlVeterinaria, parametros, &respuesta); err != nil {
+		c.responderError(http.StatusBadGateway, "No fue posible consultar las veterinarias en la CRUD")
+		return
+	}
+	if !respuesta.Success {
+		c.responderError(http.StatusBadGateway, "La CRUD no pudo consultar las veterinarias")
+		return
+	}
+
+	veterinarias := make([]models.VeterinariaCRUD, 0, len(respuesta.Data))
+	for _, veterinaria := range respuesta.Data {
+		if veterinaria.Activo {
+			servicios, err := c.consultarServicios(veterinaria.ID)
+			if err != nil {
+				c.responderError(http.StatusBadGateway, "No fue posible consultar los servicios de las veterinarias")
+				return
+			}
+			veterinaria.Servicios = servicios
+			veterinarias = append(veterinarias, veterinaria)
+		}
+	}
+
+	c.Data["json"] = map[string]interface{}{
+		"success": true,
+		"data":    veterinarias,
+	}
+	c.ServeJSON()
 }
 
 // GetDetalleVeterinaria reúne la clínica, sus servicios y sus productos.
