@@ -1,7 +1,7 @@
-package controllers_InicioSesion
+package controllers
 
 import (
-	"API_MID_AGROCAMPO/models_InicioSesion"
+	"API_MID_AGROCAMPO/models"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -23,12 +23,12 @@ func (c *Recuperar_contrasenaController) responderError(status int, mensaje stri
 // Post ...
 // @Title Create
 // @Description create Recuperar_contrasena
-// @Param	body		body 	models_InicioSesion.Recuperar_contrasena	true		"body for Recuperar_contrasena content"
-// @Success 201 {object} models_InicioSesion.Recuperar_contrasena
+// @Param	body		body 	models.Recuperar_contrasena	true		"body for Recuperar_contrasena content"
+// @Success 201 {object} models.Recuperar_contrasena
 // @Failure 403 body is empty
 // @router / [post]
 func (c *Recuperar_contrasenaController) Post() {
-	var solicitud models_InicioSesion.RecuperarContrasenaRequest
+	var solicitud models.RecuperarContrasenaRequest
 
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &solicitud)
 	if err != nil {

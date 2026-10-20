@@ -1,4 +1,4 @@
-package models_InicioSesion
+package models
 
 // Lo que se lee del CRUD de usuarios
 type UsuarioPerfilCrud struct {

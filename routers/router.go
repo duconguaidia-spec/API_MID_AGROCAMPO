@@ -2,7 +2,6 @@ package routers
 
 import (
 	"API_MID_AGROCAMPO/controllers"
-	"API_MID_AGROCAMPO/controllers_InicioSesion"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
@@ -10,15 +9,31 @@ import (
 func init() {
 
 	//Inicio Sesion
-	beego.Router("/api/creacion/usuario", &controllers_InicioSesion.CrearUsuarioController{}, "post:CrearUsuario")
-	beego.Router("/api/recuperar_contrasena", &controllers_InicioSesion.Recuperar_contrasenaController{}, "post:Post")
+	beego.Router(
+		"/api/creacion/usuario", 
+		&controllers.CrearUsuarioController{}, 
+		"post:CrearUsuario",
+	)
+	beego.Router(
+		"/api/recuperar_contrasena", 
+		&controllers.Recuperar_contrasenaController{}, 
+		"post:Post",
+	)
 	//Estadisticas_del_sector
-	beego.Router("/v1/estadisticas_del_sector", &controllers.Estadisticas_del_sectorController{}, "get:GetAll;post:Post")
-	beego.Router("/v1/estadistica_del_sector/:id([0-9]+)", &controllers.Estadisticas_del_sectorController{}, "get:GetOne;put:Put;delete:Delete")
+	beego.Router(
+		"/v1/estadisticas_del_sector",
+		&controllers.Estadisticas_del_sectorController{},
+		"get:GetAll;post:Post",
+	)
+	beego.Router(
+		"/v1/estadisticas_del_sector/:id([0-9]+)",
+		&controllers.Estadisticas_del_sectorController{},
+		"get:GetOne;put:Put;delete:Delete",
+	)
 
 	//Estadisticas_del_ganado(precio de la subasta)
 	beego.Router("/v1/estadisticas_del_ganado", &controllers.Estadisticas_del_ganadoController{}, "get:GetAll;post:Post")
-	beego.Router("/v1/estadisticas_del_ganado/:id([0-9]+", &controllers.Estadisticas_del_ganadoController{}, "get:GetOne;put:Put;delete:Delete")
+	beego.Router("/v1/estadisticas_del_ganado/:id([0-9]+", &controllers.Estadisticas_del_ganadoController{},"get:GetOne;put:Put;delete:Delete")
 
 	// Esta ruta reúne la información que necesita la página de detalle.
 	beego.Router(
@@ -27,8 +42,8 @@ func init() {
 		"get:GetDetalleVeterinaria",
 	)
 	beego.Router(
-		"/api/v1/veterinarias",
-		&controllers.VeterinariaController{},
-		"get:GetAllVeterinarias;post:PostCrearVeterinaria",
-	)
+	"/api/v1/veterinarias",
+	&controllers.VeterinariaController{},
+	"post:PostCrearVeterinaria",
+)
 }
