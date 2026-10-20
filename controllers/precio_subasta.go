@@ -10,7 +10,7 @@ import (
 )
 
 // PreciosSubastaController operations for PrecioSubasta
-type PreciosSubastaController struct {
+type PrecioSubastaController struct {
 	beego.Controller
 }
 
@@ -28,9 +28,11 @@ func validarPrecio(p models.PrecioSubasta, esNuevo bool) string {
 	return ""
 }
 
+
+
 // GetAll trae los precios del CRUD
 // para ver los de una subasta: ?query=subasta_id:1
-func (c *PreciosSubastaController) GetAll() {
+func (c *PrecioSubastaController) GetAll() {
 	respuesta, err := services.Pedir("GET", "/tr_precio_subasta_ganado"+parametrosUrl(&c.Controller), nil)
 	if err != nil {
 		fallaCrud(&c.Controller, err)
@@ -47,7 +49,7 @@ func (c *PreciosSubastaController) GetAll() {
 }
 
 // GetOne trae un precio por id
-func (c *PreciosSubastaController) GetOne() {
+func (c *PrecioSubastaController) GetOne() {
 	id := c.Ctx.Input.Param(":id")
 
 	respuesta, err := services.Pedir("GET", "/tr_precio_subasta_ganado/"+id, nil)
@@ -59,7 +61,7 @@ func (c *PreciosSubastaController) GetOne() {
 }
 
 // Post valida y crea un precio
-func (c *PreciosSubastaController) Post() {
+func (c *PrecioSubastaController) Post() {
 	var precio models.PrecioSubasta
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &precio)
 	if err != nil {
@@ -82,7 +84,7 @@ func (c *PreciosSubastaController) Post() {
 }
 
 // Put valida y modifica el precio (solo cambia el precio y la unidad)
-func (c *PreciosSubastaController) Put() {
+func (c *PrecioSubastaController) Put() {
 	id := c.Ctx.Input.Param(":id")
 
 	var precio models.PrecioSubasta
@@ -110,7 +112,7 @@ func (c *PreciosSubastaController) Put() {
 }
 
 // Delete elimina un precio (el CRUD solo lo desactiva)
-func (c *PreciosSubastaController) Delete() {
+func (c *PrecioSubastaController) Delete() {
 	id := c.Ctx.Input.Param(":id")
 
 	respuesta, err := services.Pedir("DELETE", "/tr_precio_subasta_ganado/"+id, nil)
