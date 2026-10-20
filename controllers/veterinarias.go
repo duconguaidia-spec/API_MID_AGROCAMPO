@@ -1,7 +1,9 @@
 package controllers
 
 import (
-	"api_mid_AgroCampo/models"
+	"API_MID_AGROCAMPO/models"
+
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,7 +11,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"bytes"
 	"time"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -69,6 +70,7 @@ func (c *VeterinariaController) GetDetalleVeterinaria() {
 	}
 	c.ServeJSON()
 }
+
 // PostCrearVeterinaria crea la veterinaria y luego sus productos en las CRUD.
 func (c *VeterinariaController) PostCrearVeterinaria() {
 	var solicitud models.CrearVeterinariaRequest
@@ -213,13 +215,12 @@ func (c *VeterinariaController) PostCrearVeterinaria() {
 	// Devuelve al frontend todo lo que se creó.
 	c.Ctx.Output.SetStatus(http.StatusCreated)
 	c.Data["json"] = models.CrearVeterinariaResponse{
-	Success: true,
-	Message: "Veterinaria y productos creados correctamente",
-	Data: models.CrearVeterinariaDataResponse{
-		Veterinaria: respuestaVeterinaria.Data,
-		Productos:   productosCreados,
-	},
-
+		Success: true,
+		Message: "Veterinaria y productos creados correctamente",
+		Data: models.CrearVeterinariaDataResponse{
+			Veterinaria: respuestaVeterinaria.Data,
+			Productos:   productosCreados,
+		},
 	}
 	c.ServeJSON()
 }
@@ -269,7 +270,6 @@ func enviarPOSTCRUD(
 
 	return respuesta.StatusCode, nil
 }
-
 
 func (c *VeterinariaController) idVeterinaria() (int, bool) {
 	id, err := strconv.Atoi(c.Ctx.Input.Param(":id"))
