@@ -110,3 +110,5 @@ build/
 *.iml
 .DS_Store
 Thumbs.db
+
+token/token.json
