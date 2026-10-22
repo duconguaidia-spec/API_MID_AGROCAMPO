@@ -1,18 +1,13 @@
 package models
 
-// Lo que envía el cliente al MID
-type RecuperarContrasenaRequest struct {
-	Correo string `json:"Correo"`
+// SolicitudRecuperacion es el cuerpo esperado en POST /api/recuperar_contrasena
+type SolicitudRecuperacion struct {
+	Correo string `json:"correo"`
 }
 
-// Lo que se lee de cada usuario devuelto por el CRUD (solo lo necesario)
-type UsuarioCrudItem struct {
-	Id     int    `json:"Id"`
-	Correo string `json:"Correo"`
-	Activo bool   `json:"Activo"`
-}
-
-// Respuesta final del MID
-type RecuperarContrasenaResponse struct {
-	Mensaje string `json:"Mensaje"`
+// SolicitudRestablecer es el cuerpo esperado en POST /api/restablecer_contrasena
+type SolicitudRestablecer struct {
+	Correo          string `json:"correo"`
+	Codigo          string `json:"codigo"`
+	NuevaContrasena string `json:"nueva_contrasena"`
 }
