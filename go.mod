@@ -6,6 +6,7 @@ require (
 	github.com/beego/beego/v2 v2.3.10
 	github.com/lib/pq v1.10.9
 	github.com/smartystreets/goconvey v1.8.1
+	golang.org/x/crypto v0.58.0
 )
 
 require (
@@ -24,7 +25,6 @@ require (
 	github.com/shiena/ansicolor v0.0.0-20230509054315-a9deabde6e02 // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
