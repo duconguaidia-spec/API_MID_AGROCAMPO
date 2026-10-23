@@ -10,13 +10,13 @@ func init() {
 
 	//Inicio Sesion
 	beego.Router(
-		"/api/creacion/usuario",
-		&controllers.CrearUsuarioController{},
+		"/api/creacion/usuario", 
+		&controllers.CrearUsuarioController{}, 
 		"post:CrearUsuario",
 	)
 	beego.Router(
-		"/api/recuperar_contrasena",
-		&controllers.Recuperar_contrasenaController{},
+		"/api/recuperar_contrasena", 
+		&controllers.Recuperar_contrasenaController{}, 
 		"post:Post",
 	)
 	
