@@ -44,6 +44,6 @@ func init() {
 	beego.Router(
 	"/api/v1/veterinarias",
 	&controllers.VeterinariaController{},
-	"post:PostCrearVeterinaria",
+	"get:GetAllVeterinarias;post:PostCrearVeterinaria",
 )
 }
