@@ -2,12 +2,17 @@ package controllers
 
 import (
 	"API_MID_AGROCAMPO/models"
+	service "API_MID_AGROCAMPO/services"
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"mime"
 	"net/http"
+	"net/mail"
 
+	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -44,7 +49,32 @@ func (c *CrearUsuarioController) crear(url string, datos interface{}) ([]byte, i
 		return nil, respuesta.StatusCode, errors.New("respuesta no exitosa del api")
 	}
 
+	// El CRUD responde 200 aunque la operacion falle, por eso se revisa el campo success
+	var respuestaCrud models.RespuestaCrud
+	err = json.Unmarshal(resultado, &respuestaCrud)
+	if err != nil || !respuestaCrud.Success {
+		return nil, http.StatusBadGateway, errors.New("el api CRUD no completo la operacion: " + respuestaCrud.Message)
+	}
+
 	return resultado, http.StatusOK, nil
+}
+
+// enviarBienvenida envia por Gmail el mensaje de bienvenida al usuario recien creado
+func (c *CrearUsuarioController) enviarBienvenida(correo string, nombre string) error {
+	servicioGmail, err := service.NewGmailService()
+	if err != nil {
+		return err
+	}
+
+	// El asunto se codifica para que la tilde y los signos se vean bien en el correo
+	asunto := mime.QEncoding.Encode("UTF-8", "¡Bienvenido a AgroCampo!")
+	cuerpo := fmt.Sprintf(
+		"Hola %s,\n\n¡Bienvenido a AgroCampo! Tu cuenta fue creada con éxito y ya puedes iniciar sesión con este correo.\n\nNos alegra tenerte con nosotros.",
+		nombre,
+	)
+
+	_, err = servicioGmail.SendEmail(correo, asunto, cuerpo)
+	return err
 }
 
 // CrearUsuario ...
@@ -76,6 +106,13 @@ func (c *CrearUsuarioController) CrearUsuario() {
 
 	if solicitud.Correo == "" {
 		c.responderError(http.StatusBadRequest, "El campo correo es obligatorio")
+		return
+	}
+
+	// El correo se usa como destinatario del mensaje, por eso debe ser una direccion valida y limpia
+	direccion, err := mail.ParseAddress(solicitud.Correo)
+	if err != nil || direccion.Address != solicitud.Correo {
+		c.responderError(http.StatusBadRequest, "El campo correo no tiene un formato valido")
 		return
 	}
 
@@ -126,13 +163,13 @@ func (c *CrearUsuarioController) CrearUsuario() {
 
 	var usuarioCreado models.UsuarioCrudResponse
 	err = json.Unmarshal(cuerpoUsuario, &usuarioCreado)
-	if err != nil || usuarioCreado.Id == 0 {
+	if err != nil || usuarioCreado.Data.Id == 0 {
 		c.responderError(http.StatusInternalServerError, "No fue posible procesar la respuesta del api usuarios")
 		return
 	}
 
 	contrasenaCrud := models.ContrasenaCrudRequest{
-		IdUsuario:      models.RefCrud{Id: usuarioCreado.Id},
+		IdUsuario:      models.RefCrud{Id: usuarioCreado.Data.Id},
 		ContrasenaHash: string(hash),
 		Activa:         true,
 	}
@@ -143,10 +180,19 @@ func (c *CrearUsuarioController) CrearUsuario() {
 		return
 	}
 
+	// El usuario ya esta creado: si el correo de bienvenida falla solo se avisa en la respuesta
+	correoEnviado := true
+	err = c.enviarBienvenida(solicitud.Correo, solicitud.Nombre)
+	if err != nil {
+		correoEnviado = false
+		logs.Warn("No fue posible enviar el correo de bienvenida a %s: %v", solicitud.Correo, err)
+	}
+
 	c.Ctx.Output.SetStatus(http.StatusCreated)
 	c.Data["json"] = models.CrearUsuarioResponse{
-		Mensaje:   "Usuario creado correctamente",
-		IDUsuario: usuarioCreado.Id,
+		Mensaje:                 "Usuario creado correctamente",
+		IDUsuario:               usuarioCreado.Data.Id,
+		CorreoBienvenidaEnviado: correoEnviado,
 	}
 	c.ServeJSON()
 }

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 )
 
@@ -24,11 +25,13 @@ func (c *HomeController) responderError(status int, mensaje string) {
 func (c *HomeController) obtener(url string, destino interface{}) (int, error) {
 	respuesta, err := http.Get(url)
 	if err != nil {
+		logs.Warn("Home: no fue posible consultar %s: %v", url, err)
 		return http.StatusInternalServerError, err
 	}
 	defer respuesta.Body.Close()
 
 	if respuesta.StatusCode < http.StatusOK || respuesta.StatusCode >= http.StatusMultipleChoices {
+		logs.Warn("Home: %s respondio con el estado %d", url, respuesta.StatusCode)
 		return respuesta.StatusCode, errors.New("respuesta no exitosa del api")
 	}
 
@@ -37,8 +40,17 @@ func (c *HomeController) obtener(url string, destino interface{}) (int, error) {
 		return http.StatusInternalServerError, err
 	}
 
+	// Algunos CRUD devuelven la lista dentro de "data" y otros la devuelven directa
+	var envoltura struct {
+		Data json.RawMessage `json:"data"`
+	}
+	if json.Unmarshal(cuerpo, &envoltura) == nil && len(envoltura.Data) > 0 {
+		cuerpo = envoltura.Data
+	}
+
 	err = json.Unmarshal(cuerpo, destino)
 	if err != nil {
+		logs.Warn("Home: la respuesta de %s no tiene el formato esperado: %v", url, err)
 		return http.StatusInternalServerError, err
 	}
 

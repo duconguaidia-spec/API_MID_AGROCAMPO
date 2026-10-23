@@ -28,9 +28,20 @@ type UsuarioCrudRequest struct {
 	Activo     bool    `json:"activo"`
 }
 
-// Respuesta del CRUD de usuarios al crear (solo necesita el id)
-type UsuarioCrudResponse struct {
+// Datos del usuario creado que devuelve el CRUD (solo necesita el id)
+type DatosUsuarioCrud struct {
 	Id int `json:"id"`
+}
+
+// Respuesta del CRUD de usuarios al crear: el id viene dentro de "data"
+type UsuarioCrudResponse struct {
+	Data DatosUsuarioCrud `json:"data"`
+}
+
+// Parte comun de las respuestas del CRUD, sirve para saber si la operacion fue exitosa
+type RespuestaCrud struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
 }
 
 // Lo que se envia al CRUD de contrasenas
@@ -41,6 +52,7 @@ type ContrasenaCrudRequest struct {
 }
 
 type CrearUsuarioResponse struct {
-	Mensaje   string `json:"Mensaje"`
-	IDUsuario int    `json:"IDUsuario"`
+	Mensaje                 string `json:"Mensaje"`
+	IDUsuario               int    `json:"IDUsuario"`
+	CorreoBienvenidaEnviado bool   `json:"CorreoBienvenidaEnviado"`
 }

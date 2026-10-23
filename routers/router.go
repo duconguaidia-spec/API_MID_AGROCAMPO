@@ -10,15 +10,30 @@ func init() {
 
 	//Inicio Sesion
 	beego.Router(
-		"/api/creacion/usuario", 
-		&controllers.CrearUsuarioController{}, 
+		"/api/creacion/usuario",
+		&controllers.CrearUsuarioController{},
 		"post:CrearUsuario",
 	)
+
+	// Recuperacion de contraseña
 	beego.Router(
-		"/api/recuperar_contrasena", 
-		&controllers.Recuperar_contrasenaController{}, 
-		"post:Post",
+		"/api/recuperar_contrasena",
+		&controllers.Recuperar_contrasenaController{},
+		"post:Solicitar",
 	)
+	beego.Router(
+		"/api/restablecer_contrasena",
+		&controllers.Recuperar_contrasenaController{},
+		"post:Restablecer",
+	)
+
+	// Home: contadores y ultimas noticias (publico, sin token)
+	beego.Router(
+		"/api/v1/home",
+		&controllers.HomeController{},
+		"get:GetAll",
+	)
+
 	//Estadisticas_del_sector
 	beego.Router(
 		"/v1/estadisticas_del_sector",
@@ -33,7 +48,7 @@ func init() {
 
 	//Estadisticas_del_ganado(precio de la subasta)
 	beego.Router("/v1/estadisticas_del_ganado", &controllers.Estadisticas_del_ganadoController{}, "get:GetAll;post:Post")
-	beego.Router("/v1/estadisticas_del_ganado/:id([0-9]+", &controllers.Estadisticas_del_ganadoController{},"get:GetOne;put:Put;delete:Delete")
+	beego.Router("/v1/estadisticas_del_ganado/:id([0-9]+)", &controllers.Estadisticas_del_ganadoController{}, "get:GetOne;put:Put;delete:Delete")
 
 	// Esta ruta reúne la información que necesita la página de detalle.
 	beego.Router(
@@ -42,8 +57,8 @@ func init() {
 		"get:GetDetalleVeterinaria",
 	)
 	beego.Router(
-	"/api/v1/veterinarias",
-	&controllers.VeterinariaController{},
-	"get:GetAllVeterinarias;post:PostCrearVeterinaria",
-)
+		"/api/v1/veterinarias",
+		&controllers.VeterinariaController{},
+		"get:GetAllVeterinarias;post:PostCrearVeterinaria",
+	)
 }
