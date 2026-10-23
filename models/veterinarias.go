@@ -120,6 +120,7 @@ type CrearVeterinariaRequest struct {
 	Latitud         *float64               `json:"latitud,omitempty"`
 	Longitud        *float64               `json:"longitud,omitempty"`
 	Productos       []CrearProductoRequest `json:"productos"`
+	Servicios       []CrearServicioRequest `json:"servicios"`
 }
 
 // Datos de cada producto que recibe el MID.
@@ -127,6 +128,13 @@ type CrearProductoRequest struct {
 	Nombre      string  `json:"nombre"`
 	Descripcion string  `json:"descripcion,omitempty"`
 	ImagenURL   string  `json:"imagen_url,omitempty"`
+	Precio      float64 `json:"precio"`
+}
+
+// CrearServicioRequest contiene los datos de un servicio propio de la veterinaria.
+type CrearServicioRequest struct {
+	Nombre      string  `json:"nombre"`
+	Descripcion string  `json:"descripcion,omitempty"`
 	Precio      float64 `json:"precio"`
 }
 
@@ -162,15 +170,31 @@ type CrearProductoVeterinariaCRUD struct {
 	Activo      bool                      `json:"activo"`
 }
 
+// CrearServicioVeterinariaCRUD es el formato que recibe la CRUD al crear un servicio.
+type CrearServicioVeterinariaCRUD struct {
+	Veterinaria ReferenciaVeterinariaCRUD `json:"veterinaria"`
+	Nombre      string                    `json:"nombre"`
+	Descripcion string                    `json:"descripcion,omitempty"`
+	Precio      float64                   `json:"precio"`
+	Activo      bool                      `json:"activo"`
+}
+
 // Respuesta de la CRUD al crear un solo producto.
 type RespuestaCrearProductoCRUD struct {
 	Success bool         `json:"success"`
 	Data    ProductoCRUD `json:"data"`
 }
 
+// RespuestaCrearServicioCRUD es la respuesta de la CRUD al crear un servicio.
+type RespuestaCrearServicioCRUD struct {
+	Success bool         `json:"success"`
+	Data    ServicioCRUD `json:"data"`
+}
+
 type CrearVeterinariaDataResponse struct {
 	Veterinaria VeterinariaCRUD `json:"veterinaria"`
 	Productos   []ProductoCRUD  `json:"productos"`
+	Servicios   []ServicioCRUD  `json:"servicios"`
 }
 
 type CrearVeterinariaResponse struct {

@@ -110,7 +110,7 @@ func (c *VeterinariaController) GetDetalleVeterinaria() {
 	c.ServeJSON()
 }
 
-// PostCrearVeterinaria crea la veterinaria y luego sus productos en las CRUD.
+// PostCrearVeterinaria crea la veterinaria y luego sus productos y servicios en las CRUD.
 func (c *VeterinariaController) PostCrearVeterinaria() {
 	var solicitud models.CrearVeterinariaRequest
 
@@ -149,6 +149,22 @@ func (c *VeterinariaController) PostCrearVeterinaria() {
 			return
 		}
 	}
+	for i, servicio := range solicitud.Servicios {
+		if strings.TrimSpace(servicio.Nombre) == "" {
+			c.responderError(
+				http.StatusBadRequest,
+				fmt.Sprintf("El servicio en la posición %d debe tener nombre", i),
+			)
+			return
+		}
+		if servicio.Precio < 0 {
+			c.responderError(
+				http.StatusBadRequest,
+				fmt.Sprintf("El precio del servicio en la posición %d no puede ser negativo", i),
+			)
+			return
+		}
+	}
 
 	// Lee las direcciones de las CRUD desde conf/app.conf.
 	urlVeterinaria, err := beego.AppConfig.String("url_veterinaria")
@@ -165,6 +181,15 @@ func (c *VeterinariaController) PostCrearVeterinaria() {
 		c.responderError(
 			http.StatusInternalServerError,
 			"Falta configurar url_productos_veterinaria",
+		)
+		return
+	}
+
+	urlServicios, err := beego.AppConfig.String("url_servicios_veterinaria")
+	if err != nil {
+		c.responderError(
+			http.StatusInternalServerError,
+			"Falta configurar url_servicios_veterinaria",
 		)
 		return
 	}
@@ -211,6 +236,7 @@ func (c *VeterinariaController) PostCrearVeterinaria() {
 
 	idVeterinaria := respuestaVeterinaria.Data.ID
 	productosCreados := make([]models.ProductoCRUD, 0, len(solicitud.Productos))
+	serviciosCreados := make([]models.ServicioCRUD, 0, len(solicitud.Servicios))
 
 	// Crea cada producto usando el ID que devolvió la CRUD de veterinarias.
 	for i, producto := range solicitud.Productos {
@@ -251,14 +277,51 @@ func (c *VeterinariaController) PostCrearVeterinaria() {
 		productosCreados = append(productosCreados, respuestaProducto.Data)
 	}
 
+	// Crea cada servicio propio asociado a la veterinaria que acaba de registrarse.
+	for i, servicio := range solicitud.Servicios {
+		servicioCRUD := models.CrearServicioVeterinariaCRUD{
+			Veterinaria: models.ReferenciaVeterinariaCRUD{ID: idVeterinaria},
+			Nombre:      strings.TrimSpace(servicio.Nombre),
+			Descripcion: servicio.Descripcion,
+			Precio:      servicio.Precio,
+			Activo:      true,
+		}
+
+		var respuestaServicio models.RespuestaCrearServicioCRUD
+		_, err := enviarPOSTCRUD(
+			c.Ctx.Request.Context(),
+			urlServicios,
+			servicioCRUD,
+			&respuestaServicio,
+		)
+		if err != nil || !respuestaServicio.Success {
+			c.Ctx.Output.SetStatus(http.StatusBadGateway)
+			c.Data["json"] = map[string]interface{}{
+				"success":          false,
+				"message":          "La veterinaria se creó, pero falló la creación de uno de sus servicios",
+				"servicio_fallido": i,
+				"data": map[string]interface{}{
+					"veterinaria": respuestaVeterinaria.Data,
+					"productos":   productosCreados,
+					"servicios":   serviciosCreados,
+				},
+			}
+			c.ServeJSON()
+			return
+		}
+
+		serviciosCreados = append(serviciosCreados, respuestaServicio.Data)
+	}
+
 	// Devuelve al frontend todo lo que se creó.
 	c.Ctx.Output.SetStatus(http.StatusCreated)
 	c.Data["json"] = models.CrearVeterinariaResponse{
 		Success: true,
-		Message: "Veterinaria y productos creados correctamente",
+		Message: "Veterinaria, productos y servicios creados correctamente",
 		Data: models.CrearVeterinariaDataResponse{
 			Veterinaria: respuestaVeterinaria.Data,
 			Productos:   productosCreados,
+			Servicios:   serviciosCreados,
 		},
 	}
 	c.ServeJSON()
