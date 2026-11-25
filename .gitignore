@@ -112,3 +112,4 @@ build/
 Thumbs.db
 
 token/token.json
+static/uploads/

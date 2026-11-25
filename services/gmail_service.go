@@ -314,6 +314,7 @@ func (g *GmailService) SendEmailConAdjunto(
 			"\r\n",
 		boundary,
 		nombreArchivo,
+		nombreArchivo,
 	)
 
 	pdfBase64 := base64.StdEncoding.EncodeToString(archivo)

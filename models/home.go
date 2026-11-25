@@ -44,6 +44,7 @@ type NoticiaHome struct {
 // Un contador en null significa "no disponible"
 type ContadoresHome struct {
 	ForosNoticias *int `json:"ForosNoticias"`
+	Productores   *int `json:"Productores"`
 	Veterinarias  *int `json:"Veterinarias"`
 	Eficiencia    *int `json:"Eficiencia"`
 }

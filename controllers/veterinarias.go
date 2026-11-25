@@ -115,7 +115,7 @@ func (c *VeterinariaController) PostCrearVeterinaria() {
 	var solicitud models.CrearVeterinariaRequest
 
 	// Lee el JSON enviado por el frontend.
-	if err := json.NewDecoder(c.Ctx.Request.Body).Decode(&solicitud); err != nil {
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &solicitud); err != nil {
 		c.responderError(http.StatusBadRequest, "El JSON enviado no es válido")
 		return
 	}
@@ -334,6 +334,12 @@ func enviarPOSTCRUD(
 	datos interface{},
 	destino interface{},
 ) (int, error) {
+	return enviarJSONCRUD(ctx, http.MethodPost, endpoint, datos, destino)
+}
+
+var clienteVeterinarias = &http.Client{Timeout: 10 * time.Second}
+
+func enviarJSONCRUD(ctx context.Context, metodo, endpoint string, datos, destino interface{}) (int, error) {
 	cuerpoJSON, err := json.Marshal(datos)
 	if err != nil {
 		return 0, err
@@ -341,8 +347,8 @@ func enviarPOSTCRUD(
 
 	peticion, err := http.NewRequestWithContext(
 		ctx,
-		http.MethodPost,
-		endpoint,
+		metodo,
+		strings.TrimRight(endpoint, "/")+barraColeccion(metodo),
 		bytes.NewReader(cuerpoJSON),
 	)
 	if err != nil {
@@ -351,8 +357,7 @@ func enviarPOSTCRUD(
 
 	peticion.Header.Set("Content-Type", "application/json")
 
-	cliente := &http.Client{Timeout: 10 * time.Second}
-	respuesta, err := cliente.Do(peticion)
+	respuesta, err := clienteVeterinarias.Do(peticion)
 	if err != nil {
 		return 0, err
 	}
@@ -371,6 +376,13 @@ func enviarPOSTCRUD(
 	}
 
 	return respuesta.StatusCode, nil
+}
+
+func barraColeccion(metodo string) string {
+	if metodo == http.MethodPost {
+		return "/"
+	}
+	return ""
 }
 
 func (c *VeterinariaController) idVeterinaria() (int, bool) {
@@ -493,8 +505,7 @@ func consultarCRUD(ctx context.Context, endpoint string, parametros url.Values, 
 		return err
 	}
 
-	cliente := &http.Client{Timeout: 10 * time.Second}
-	respuesta, err := cliente.Do(peticion)
+	respuesta, err := clienteVeterinarias.Do(peticion)
 	if err != nil {
 		return err
 	}
