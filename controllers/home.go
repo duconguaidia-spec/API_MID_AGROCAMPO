@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"sync"
 
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
@@ -23,7 +24,11 @@ func (c *HomeController) responderError(status int, mensaje string) {
 }
 
 func (c *HomeController) obtener(url string, destino interface{}) (int, error) {
-	respuesta, err := http.Get(url)
+	peticion, err := http.NewRequestWithContext(c.Ctx.Request.Context(), http.MethodGet, url, nil)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	respuesta, err := clienteModulos.Do(peticion)
 	if err != nil {
 		logs.Warn("Home: no fue posible consultar %s: %v", url, err)
 		return http.StatusInternalServerError, err
@@ -65,7 +70,7 @@ func (c *HomeController) contarForosNoticias(urlForos string, urlNoticias string
 	}
 
 	var noticias []models.NoticiaCrud
-	_, err = c.obtener(urlNoticias+"?limit=-1", &noticias)
+	_, err = c.obtener(urlNoticias+"?limit=-1&query=Estado:publicada,AccesoLimitado:false", &noticias)
 	if err != nil {
 		return nil
 	}
@@ -134,7 +139,7 @@ func (c *HomeController) ultimasNoticias(urlNoticias string) []models.NoticiaHom
 	ultimas := []models.NoticiaHome{}
 
 	var noticias []models.NoticiaCrud
-	_, err := c.obtener(urlNoticias+"?sortby=FechaNoticia&order=desc&limit=-1", &noticias)
+	_, err := c.obtener(urlNoticias+"?sortby=FechaNoticia&order=desc&limit=5&query=Estado:publicada,AccesoLimitado:false", &noticias)
 	if err != nil {
 		return ultimas
 	}
@@ -167,6 +172,15 @@ func (c *HomeController) ultimasNoticias(urlNoticias string) []models.NoticiaHom
 // @Success 200 {object} models.HomeResponse
 // @Failure 500 {object} map[string]string
 // @router / [get]
+func (c *HomeController) contarProductores() *int {
+	respuesta, status, err := peticionModulo(c.Ctx.Request, "crud_usuarios", "cuenta/contar-productores", http.MethodPost, []byte(`{}`))
+	var total int
+	if err != nil || status != http.StatusOK || !respuesta.Success || json.Unmarshal(respuesta.Data, &total) != nil {
+		return nil
+	}
+	return &total
+}
+
 func (c *HomeController) GetAll() {
 	urlForos, _ := beego.AppConfig.String("url_foros")
 	if urlForos == "" {
@@ -192,14 +206,15 @@ func (c *HomeController) GetAll() {
 		return
 	}
 
+	var resumen models.HomeResponse
+	var tareas sync.WaitGroup
+	tareas.Go(func() { resumen.Contadores.ForosNoticias = c.contarForosNoticias(urlForos, urlNoticias) })
+	tareas.Go(func() { resumen.Contadores.Veterinarias = c.contarVeterinarias(urlVeterinarias) })
+	tareas.Go(func() { resumen.Contadores.Productores = c.contarProductores() })
+	tareas.Go(func() { resumen.Contadores.Eficiencia = c.calcularEficiencia(urlSolicitudes) })
+	tareas.Go(func() { resumen.Noticias = c.ultimasNoticias(urlNoticias) })
+	tareas.Wait()
 	c.Ctx.Output.SetStatus(http.StatusOK)
-	c.Data["json"] = models.HomeResponse{
-		Contadores: models.ContadoresHome{
-			ForosNoticias: c.contarForosNoticias(urlForos, urlNoticias),
-			Veterinarias:  c.contarVeterinarias(urlVeterinarias),
-			Eficiencia:    c.calcularEficiencia(urlSolicitudes),
-		},
-		Noticias: c.ultimasNoticias(urlNoticias),
-	}
+	c.Data["json"] = resumen
 	c.ServeJSON()
 }

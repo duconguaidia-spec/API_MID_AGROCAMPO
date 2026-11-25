@@ -7,6 +7,10 @@ import (
 )
 
 func init() {
+	beego.Router("/api/v1/modulos/:recurso", &controllers.ModulosController{}, "get,post:Operar")
+	beego.Router("/api/v1/modulos/:recurso/:id", &controllers.ModulosController{}, "get:Operar")
+	beego.Router("/api/v1/cuenta/:accion", &controllers.CuentaController{}, "get,post,put,delete:Operar")
+	beego.Router("/api/v1/reportes/:id/archivo", &controllers.ModulosController{}, "get:DescargarReporte")
 
 	//Inicio Sesion
 	beego.Router(
@@ -54,11 +58,16 @@ func init() {
 	beego.Router(
 		"/api/v1/veterinarias/:id",
 		&controllers.VeterinariaController{},
-		"get:GetDetalleVeterinaria",
+		"get:GetDetalleVeterinaria;put:PutVeterinaria;delete:DeleteVeterinaria",
 	)
 	beego.Router(
 		"/api/v1/veterinarias",
 		&controllers.VeterinariaController{},
 		"get:GetAllVeterinarias;post:PostCrearVeterinaria",
 	)
+	beego.Router("/api/v1/veterinarias/:id/productos", &controllers.VeterinariaController{}, "post:PostProducto")
+	beego.Router("/api/v1/veterinarias/:id/productos/:productoId", &controllers.VeterinariaController{}, "put:PutProducto;delete:DeleteProducto")
+	beego.Router("/api/v1/imagenes/productos", &controllers.ImagenProductoController{}, "post:Post")
+	beego.Router("/api/v1/imagenes/productos/:archivo", &controllers.ImagenProductoController{}, "get:Get")
+	beego.Router("/api/v1/imagenes", &controllers.ImagenProductoController{}, "post:PostCuenta")
 }

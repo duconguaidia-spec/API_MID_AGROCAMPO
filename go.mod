@@ -4,6 +4,7 @@ go 1.26.2
 
 require (
 	github.com/beego/beego/v2 v2.3.10
+	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.12.3
 	github.com/smartystreets/goconvey v1.8.1
 	golang.org/x/crypto v0.58.0
