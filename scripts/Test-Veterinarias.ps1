@@ -1,15 +1,17 @@
 param(
     [string]$BaseUrl = 'http://localhost:4200',
     [string]$CrudUrl = 'http://localhost:8087',
-    [switch]$Escritura
+    [switch]$Escritura,
+    [pscredential]$Credencial
 )
 
 $ErrorActionPreference = 'Stop'
 $api = $BaseUrl.TrimEnd('/') + '/api/v1/veterinarias'
 $crud = $CrudUrl.TrimEnd('/') + '/v1'
+$sesion = [Microsoft.PowerShell.Commands.WebRequestSession]::new()
 
 function Invoke-Api([string]$Method, [string]$Uri, $Data = $null) {
-    $parameters = @{ Method = $Method; Uri = $Uri; TimeoutSec = 30 }
+    $parameters = @{ Method = $Method; Uri = $Uri; TimeoutSec = 30; WebSession = $sesion }
     if ($null -ne $Data) {
         $parameters.ContentType = 'application/json; charset=utf-8'
         $parameters.Body = [System.Text.Encoding]::UTF8.GetBytes(($Data | ConvertTo-Json -Depth 15))
@@ -22,6 +24,14 @@ function Invoke-Api([string]$Method, [string]$Uri, $Data = $null) {
 $list = Invoke-Api GET $api
 Write-Output "Listado correcto: $(@($list.data).Count) veterinarias."
 if (-not $Escritura) { return }
+
+if (-not $Credencial) { $Credencial = Get-Credential -Message 'Cuenta administradora o veterinaria de AgroCampo' }
+if (-not $Credencial) { throw 'La prueba de edición requiere una cuenta de AgroCampo.' }
+$cuenta = Invoke-Api POST ($BaseUrl.TrimEnd('/') + '/api/v1/cuenta/login') @{
+    correo = $Credencial.UserName
+    contrasena = $Credencial.GetNetworkCredential().Password
+}
+if ($cuenta.data.rol -notin @('administrador', 'veterinario')) { throw 'La cuenta no tiene permiso de edición.' }
 
 # Solo se eliminan los registros creados por esta ejecución.
 $name = 'Prueba conexión ' + [guid]::NewGuid().ToString('N')

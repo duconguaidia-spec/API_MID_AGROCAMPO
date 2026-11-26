@@ -18,10 +18,13 @@ func init() {
 	beego.TestBeegoInit(filepath.Dir(filepath.Dir(file)))
 }
 
-func pedir(t *testing.T, metodo, ruta, cuerpo string, codigo int) map[string]interface{} {
+func pedir(t *testing.T, metodo, ruta, cuerpo string, codigo int, cookies ...*http.Cookie) map[string]interface{} {
 	t.Helper()
 	r := httptest.NewRequest(metodo, ruta, strings.NewReader(cuerpo))
 	r.Header.Set("Content-Type", "application/json")
+	for _, cookie := range cookies {
+		r.AddCookie(cookie)
+	}
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 	if w.Code != codigo {
@@ -106,7 +109,11 @@ func TestLecturaYCreacionVeterinaria(t *testing.T) {
 }
 
 func TestEdicionConservaDatosYValidaRelacion(t *testing.T) {
+	sesion := iniciarSesionPrueba(t, "veterinario")
 	crudPrueba(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut && r.Header.Get("X-Agrocampo-Interno") != claveEdicionPrueba {
+			t.Error("falta la autenticación interna de la edición")
+		}
 		switch r.Method + " " + r.URL.Path {
 		case "GET /v1/veterinaria/7":
 			w.Write([]byte(`{"success":true,"data":{"id":7,"nombre":"Clínica","direccion":"Calle 1","ciudad":"Yopal","telefono":"123","propietario_id":9,"activo":true,"aprobado":true}}`))
@@ -136,14 +143,15 @@ func TestEdicionConservaDatosYValidaRelacion(t *testing.T) {
 			w.WriteHeader(500)
 		}
 	})
-	pedir(t, "PUT", "/api/v1/veterinarias/7", `{"nombre":"Editada","aprobado":false,"propietario_id":22}`, 200)
+	pedir(t, "PUT", "/api/v1/veterinarias/7", `{"nombre":"Editada","aprobado":false,"propietario_id":22}`, 200, sesion)
 	pedir(t, "POST", "/api/v1/veterinarias/7/productos", `{"nombre":"Nuevo","precio":10}`, 201)
-	pedir(t, "PUT", "/api/v1/veterinarias/7/productos/3", `{"nombre":"Actualizado","precio":15}`, 200)
+	pedir(t, "PUT", "/api/v1/veterinarias/7/productos/3", `{"nombre":"Actualizado","precio":15}`, 200, sesion)
 	pedir(t, "DELETE", "/api/v1/veterinarias/8/productos/3", "", 404)
 	pedir(t, "DELETE", "/api/v1/veterinarias/7/productos/3", "", 200)
 }
 
 func TestErroresVeterinarias(t *testing.T) {
+	sesion := iniciarSesionPrueba(t, "administrador")
 	crudPrueba(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v1/veterinaria/7" {
 			w.Write([]byte(`{"success":true,"data":{"id":7}}`))
@@ -156,7 +164,7 @@ func TestErroresVeterinarias(t *testing.T) {
 	pedir(t, "GET", "/api/v1/veterinarias/0", "", 400)
 	pedir(t, "GET", "/api/v1/veterinarias/99", "", 404)
 	pedir(t, "POST", "/api/v1/veterinarias", `{"nombre":"Incompleta"}`, 400)
-	pedir(t, "PUT", "/api/v1/veterinarias/7", `{"nombre":null}`, 400)
+	pedir(t, "PUT", "/api/v1/veterinarias/7", `{"nombre":null}`, 400, sesion)
 	pedir(t, "POST", "/api/v1/veterinarias/7/productos", `{"nombre":"Producto","precio":-1}`, 400)
 	pedir(t, "POST", "/api/v1/veterinarias/7/productos", `{"nombre":"Producto"}`, 502)
 	pedir(t, "DELETE", "/api/v1/veterinarias/7/productos/no-numero", "", 400)

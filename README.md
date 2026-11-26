@@ -5,7 +5,7 @@
 Angular envía `/api` a la MID mediante el proxy de desarrollo. La MID resuelve las rutas de cuenta, veterinarias, contenido, noticias, estadísticas, soporte y reportes. Cada CRUD trabaja con su esquema de PostgreSQL en la base `AGROCAMPO`.
 
 1. Inicia PostgreSQL. Prepara la base con [las instrucciones de `database_v2`](../database_v2/README.md). Si necesitas cuentas, categorías y datos de ejemplo, carga `02_datos_prueba_completa.sql` en la base de pruebas. Los usuarios creados solo en el almacenamiento del navegador deben registrarse en el nuevo formulario.
-2. Agrega `AGROCAMPO_CLAVE_INTERNA` con una clave aleatoria de al menos 32 caracteres a `AgroCampo_Apis_Crud_Beego/.env`. Usuarios y la MID leen esa misma clave al arrancar. Si se despliegan sin el archivo compartido, define la misma variable de entorno en ambos servicios. Angular no necesita esa clave.
+2. Agrega `AGROCAMPO_CLAVE_INTERNA` con una clave aleatoria de al menos 32 caracteres a `AgroCampo_Apis_Crud_Beego/.env`. La MID y los CRUD de Usuarios, Contenido y Veterinarias leen esa clave al arrancar. Si se despliegan sin el archivo compartido, define la misma variable de entorno en esos servicios.
 3. Desde cada carpeta de la tabla, ejecuta `go run .` en una terminal independiente. Los CRUD leen su configuración de PostgreSQL de `AgroCampo_Apis_Crud_Beego/.env`.
 
 | Carpeta dentro de `AgroCampo_Apis_Crud_Beego` | Puerto | Pantallas que dependen del servicio |
@@ -24,7 +24,7 @@ Para recuperar contraseñas, configura en la MID las credenciales y el token OAu
 
 Para tus pruebas, registra una cuenta y comprueba que puedes volver a entrar y modificar su perfil. Abre noticias, foro, contenido, soporte y estadísticas con datos de ejemplo. Con el rol correspondiente, publica contenido o actualiza una cotización. Desde Estadísticas, solicita un PDF o Excel y descárgalo en Mis reportes. La descarga conserva las cotizaciones de las últimas cuatro subastas al momento de la solicitud.
 
-El directorio de veterinarias mantiene su API existente. La autorización del servidor para sus escrituras y la persistencia del campo de especialidad son tareas pendientes.
+La edición de veterinarias, productos y temas del foro requiere una sesión de administrador o veterinario. La autorización del servidor para las demás escrituras del directorio y la persistencia del campo de especialidad son tareas pendientes.
 
 ## Conexión de veterinarias
 
@@ -98,7 +98,7 @@ go test ./... -timeout 60s
 ./scripts/Test-Veterinarias.ps1 -Escritura
 ```
 
-El script consulta a través de Angular en `:4200`. Con `-Escritura` crea una clínica temporal con producto y servicio, prueba ediciones y eliminación de productos, vuelve a consultar para comprobar persistencia y limpia sus propios registros. Para probar solo MID → CRUD usa `-BaseUrl http://localhost:8080`. Requiere los servidores iniciados.
+El script consulta a través de Angular en `:4200`. Con `-Escritura` solicita una cuenta administradora o veterinaria, crea una clínica temporal con producto y servicio, prueba las ediciones y la eliminación de productos, y limpia sus propios registros. Para probar solo MID → CRUD usa `-BaseUrl http://localhost:8080`. Requiere los servidores iniciados.
 
 Verificado el 19 de noviembre de 2026 contra PostgreSQL local y a través del proxy de Angular, con limpieza de los registros temporales.
 
