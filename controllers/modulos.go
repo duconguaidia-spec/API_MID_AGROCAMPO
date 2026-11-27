@@ -35,6 +35,51 @@ func (c *ModulosController) responder(status int, datos interface{}, mensaje str
 	c.ServeJSON()
 }
 
+func (c *ModulosController) EditarTema() {
+	if c.Ctx.Input.Param(":recurso") != "temas" {
+		c.responder(http.StatusMethodNotAllowed, nil, "Operación no disponible")
+		return
+	}
+	if status, mensaje := autorizarEdicion(c.Ctx.Request); status != 0 {
+		c.responder(status, nil, mensaje)
+		return
+	}
+	id, err := strconv.Atoi(c.Ctx.Input.Param(":id"))
+	if err != nil || id <= 0 {
+		c.responder(http.StatusBadRequest, nil, "ID inválido")
+		return
+	}
+	var cambios struct {
+		Titulo      string `json:"titulo"`
+		Descripcion string `json:"descripcion"`
+		CategoriaID int    `json:"categoria_id"`
+	}
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &cambios); err != nil {
+		c.responder(http.StatusBadRequest, nil, "Envía un objeto JSON válido")
+		return
+	}
+	cambios.Titulo = strings.TrimSpace(cambios.Titulo)
+	cambios.Descripcion = strings.TrimSpace(cambios.Descripcion)
+	if cambios.Titulo == "" || cambios.Descripcion == "" || cambios.CategoriaID <= 0 {
+		c.responder(http.StatusBadRequest, nil, "Completa el título, la categoría y la descripción")
+		return
+	}
+	cuerpo, _ := json.Marshal(cambios)
+	recurso := recursosModulo["temas"]
+	ruta := recurso.ruta + "/" + strconv.Itoa(id)
+	respuesta, status, err := peticionModulo(c.Ctx.Request, recurso.config, ruta, http.MethodPatch, cuerpo)
+	switch {
+	case err != nil || status >= http.StatusInternalServerError || status == http.StatusForbidden:
+		c.responder(http.StatusBadGateway, nil, "No fue posible actualizar el tema en el servicio de contenido")
+	case status >= http.StatusBadRequest && respuesta.Message != "":
+		c.responder(status, nil, respuesta.Message)
+	case status != http.StatusOK || !respuesta.Success || len(respuesta.Data) == 0:
+		c.responder(http.StatusBadGateway, nil, "El servicio de contenido no confirmó la edición")
+	default:
+		c.responder(http.StatusOK, respuesta.Data, "")
+	}
+}
+
 func (c *ModulosController) Operar() {
 	nombre := c.Ctx.Input.Param(":recurso")
 	recurso, existe := recursosModulo[nombre]
@@ -239,10 +284,16 @@ func peticionModulo(origen *http.Request, config, ruta, metodo string, datos []b
 		return resultado, 0, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	cliente := clienteModulos
 	if config == "crud_usuarios" {
 		req.Header.Set("X-Agrocampo-Interno", beego.AppConfig.DefaultString("clave_crud_usuarios", ""))
+	} else if config == "crud_contenido" && metodo == http.MethodPatch {
+		if err := agregarClaveEdicionInterna(req); err != nil {
+			return resultado, 0, err
+		}
+		cliente = clienteEdicionInterna
 	}
-	resp, err := clienteModulos.Do(req)
+	resp, err := cliente.Do(req)
 	if err != nil {
 		return resultado, 0, err
 	}

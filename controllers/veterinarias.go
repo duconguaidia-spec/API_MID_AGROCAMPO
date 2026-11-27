@@ -356,8 +356,15 @@ func enviarJSONCRUD(ctx context.Context, metodo, endpoint string, datos, destino
 	}
 
 	peticion.Header.Set("Content-Type", "application/json")
+	cliente := clienteVeterinarias
+	if metodo == http.MethodPut {
+		if err := agregarClaveEdicionInterna(peticion); err != nil {
+			return 0, err
+		}
+		cliente = clienteEdicionInterna
+	}
 
-	respuesta, err := clienteVeterinarias.Do(peticion)
+	respuesta, err := cliente.Do(peticion)
 	if err != nil {
 		return 0, err
 	}

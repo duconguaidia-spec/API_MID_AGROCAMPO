@@ -8,7 +8,7 @@ import (
 
 func init() {
 	beego.Router("/api/v1/modulos/:recurso", &controllers.ModulosController{}, "get,post:Operar")
-	beego.Router("/api/v1/modulos/:recurso/:id", &controllers.ModulosController{}, "get:Operar")
+	beego.Router("/api/v1/modulos/:recurso/:id", &controllers.ModulosController{}, "get:Operar;put:EditarTema")
 	beego.Router("/api/v1/cuenta/:accion", &controllers.CuentaController{}, "get,post,put,delete:Operar")
 	beego.Router("/api/v1/reportes/:id/archivo", &controllers.ModulosController{}, "get:DescargarReporte")
 

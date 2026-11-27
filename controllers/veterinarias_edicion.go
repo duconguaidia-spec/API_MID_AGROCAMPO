@@ -29,6 +29,10 @@ func (c *VeterinariaController) DeleteVeterinaria() {
 }
 
 func (c *VeterinariaController) PutVeterinaria() {
+	if status, mensaje := autorizarEdicion(c.Ctx.Request); status != 0 {
+		c.responderError(status, mensaje)
+		return
+	}
 	id, ok := c.idVeterinaria()
 	if !ok {
 		c.responderError(http.StatusBadRequest, "El ID de la veterinaria no es válido")
@@ -69,7 +73,14 @@ func (c *VeterinariaController) PutVeterinaria() {
 }
 
 func (c *VeterinariaController) PostProducto() { c.guardarProducto(false) }
-func (c *VeterinariaController) PutProducto()  { c.guardarProducto(true) }
+
+func (c *VeterinariaController) PutProducto() {
+	if status, mensaje := autorizarEdicion(c.Ctx.Request); status != 0 {
+		c.responderError(status, mensaje)
+		return
+	}
+	c.guardarProducto(true)
+}
 
 func (c *VeterinariaController) guardarProducto(editar bool) {
 	id, ok := c.idVeterinaria()
